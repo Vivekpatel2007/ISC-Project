@@ -48,10 +48,21 @@ graph TD
    - OWASP security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options).
    - Live end-to-end integration test suite and key recovery verification.
 
+5. **Phase 5: Deployment, Release Preparation & Benchmarking**
+   - Empirical CPU and CUDA GPU inference benchmarking (CPU: ~34 ms, CUDA: ~22 ms).
+   - Multi-stage Docker containerization and Docker Compose orchestration with persistent storage.
+   - Graceful hardware fallback from CUDA to CPU.
+   - Operational staging deployment guide, disaster recovery runbook, and release checklist.
+
 ---
 
 ## Project Documentation Index
 
+- [Complete User Guide, Page Map & RBAC Guide](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/USER_GUIDE_AND_ACCESS_CONTROL.md)
+- [Phase 5 Release Report](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/PHASE_5_RELEASE_REPORT.md)
+- [Staging Deployment & Demo Guide](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/STAGING_DEPLOYMENT_GUIDE.md)
+- [Rollback & Disaster Recovery Guide](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/ROLLBACK_RECOVERY_GUIDE.md)
+- [Release Readiness Checklist](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/RELEASE_CHECKLIST.md)
 - [Security Audit Report](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/SECURITY_AUDIT.md)
 - [End-to-End Testing Report](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/END_TO_END_TESTING.md)
 - [Deployment Preparation & Operations Guide](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/DEPLOYMENT.md)
