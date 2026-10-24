@@ -40,6 +40,7 @@ from src.api.dependencies import (
     require_role,
 )
 from src.api.model_service import DenseNetInferenceEngine, InvalidImagePayloadError
+from src.api.rate_limiter import rate_limit_inference
 from src.security.database import MetadataDB, validate_patient_id, validate_scan_id
 from src.security.exceptions import (
     AuthenticationError,
@@ -223,7 +224,8 @@ def predict_scan(
     current_user: Dict[str, Any] = Depends(require_role("doctor", "radiologist", "admin")),
     storage: SecureImageStorage = Depends(get_storage),
     engine: DenseNetInferenceEngine = Depends(get_inference_engine),
-    db: MetadataDB = Depends(get_db)
+    db: MetadataDB = Depends(get_db),
+    _rate_limit: None = Depends(rate_limit_inference)
 ) -> PredictionResponse:
     """
     Retrieve an authorized encrypted scan, decrypt it in memory, and run DenseNet121 inference.

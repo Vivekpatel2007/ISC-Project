@@ -19,6 +19,7 @@ from fastapi.security import OAuth2PasswordBearer
 from src.api.auth import decode_access_token
 from src.api.config import (
     IMAGE_ENCRYPTION_KEY,
+    IS_PRODUCTION,
     MAX_IMAGE_SIZE_BYTES,
     METADATA_DB_PATH,
     MODEL_CHECKPOINT_PATH,
@@ -46,13 +47,23 @@ def get_db() -> MetadataDB:
 
 
 def get_storage_key() -> bytes:
-    """Retrieve encryption key from environment or fallback to ephemeral dev key with warning."""
+    """
+    Retrieve AES-256-GCM encryption key from environment.
+    In production mode, raises RuntimeError if missing or invalid.
+    In development mode, falls back to a deterministic development key with warning.
+    """
     try:
         return load_key_from_env()
     except Exception:
         raw_env = os.getenv("IMAGE_ENCRYPTION_KEY")
         if raw_env:
             return base64_to_key(raw_env)
+        
+        if IS_PRODUCTION:
+            raise RuntimeError(
+                "FATAL: IMAGE_ENCRYPTION_KEY must be provided via environment in production mode. "
+                "Insecure fallback keys are prohibited."
+            )
         # Development fallback only
         return b"12345678901234567890123456789012"  # 32 bytes
 

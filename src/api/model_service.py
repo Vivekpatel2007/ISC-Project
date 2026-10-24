@@ -34,6 +34,9 @@ from src.api.config import (
     MODEL_CHECKPOINT_PATH,
 )
 
+# Pillow decompression bomb protection: limit total pixels to MAX_IMAGE_DIMENSION^2 (16,777,216 px)
+Image.MAX_IMAGE_PIXELS = MAX_IMAGE_DIMENSION * MAX_IMAGE_DIMENSION
+
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DISCLAIMER_TEXT = (
     "AI-assisted screening output for clinical decision support. "
@@ -113,6 +116,8 @@ class DenseNetInferenceEngine:
 
             # Reopen because verify() consumes file pointer in PIL
             pil_img = Image.open(io.BytesIO(image_bytes))
+        except Image.DecompressionBombError:
+            raise InvalidImagePayloadError("Image decompression bomb detected: pixel count exceeds maximum safe limit.") from None
         except Exception as e:
             raise InvalidImagePayloadError(f"Malformed or unreadable image file: {type(e).__name__}") from None
 

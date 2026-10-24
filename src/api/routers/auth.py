@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from src.api.auth import create_access_token, verify_password
 from src.api.config import ACCESS_TOKEN_EXPIRE_MINUTES
 from src.api.dependencies import get_current_user, get_db
+from src.api.rate_limiter import rate_limit_login
 from src.security.database import MetadataDB
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -43,7 +44,8 @@ class UserProfileResponse(BaseModel):
 @router.post("/login", response_model=TokenResponse)
 def login(
     credentials: LoginRequest,
-    db: MetadataDB = Depends(get_db)
+    db: MetadataDB = Depends(get_db),
+    _rate_limit: None = Depends(rate_limit_login)
 ) -> TokenResponse:
     """
     Authenticate a healthcare practitioner (doctor/radiologist/admin) and return a signed JWT.

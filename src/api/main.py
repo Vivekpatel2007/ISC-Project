@@ -19,7 +19,14 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.api.auth import hash_password
-from src.api.config import CORS_ORIGINS
+from src.api.config import (
+    CORS_ORIGINS,
+    ENABLE_DOCS,
+    ENFORCE_HTTPS,
+    IS_PRODUCTION,
+    SEED_DEMO_USERS,
+    validate_production_config,
+)
 from src.api.dependencies import get_db, get_inference_engine, get_storage
 from src.api.model_service import ModelInferenceError
 from src.api.routers import auth_router, health_router, scans_router
@@ -45,36 +52,47 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; img-src 'self' data: blob:; "
+            "script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+            "frame-ancestors 'none';"
+        )
+        if ENFORCE_HTTPS or IS_PRODUCTION:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
-    Application lifespan manager: pre-warms database, seeds demo credentials,
-    and loads the DenseNet121 inference model.
+    Application lifespan manager: validates production secrets, pre-warms database,
+    optionally seeds demo credentials in development, and loads the DenseNet121 inference model.
     """
-    # 1. Warm up database
+    # 1. Fail fast if production security requirements are not satisfied
+    validate_production_config()
+
+    # 2. Warm up database
     db = get_db()
 
-    # 2. Seed demonstration accounts if not present
-    if db.get_user_by_username("doctor1") is None:
-        db.create_user(
-            username="doctor1",
-            password_hash=hash_password("DoctorPassword123!"),
-            role="doctor",
-            full_name="Dr. Sarah Chen, MD (Pediatrics)"
-        )
+    # 3. Seed demonstration accounts only if explicitly permitted (development/testing)
+    if SEED_DEMO_USERS:
+        if db.get_user_by_username("doctor1") is None:
+            db.create_user(
+                username="doctor1",
+                password_hash=hash_password("DoctorPassword123!"),
+                role="doctor",
+                full_name="Dr. Sarah Chen, MD (Pediatrics)"
+            )
 
-    if db.get_user_by_username("radiologist1") is None:
-        db.create_user(
-            username="radiologist1",
-            password_hash=hash_password("RadioPassword123!"),
-            role="radiologist",
-            full_name="Dr. James Wilson, MD (Radiology)"
-        )
+        if db.get_user_by_username("radiologist1") is None:
+            db.create_user(
+                username="radiologist1",
+                password_hash=hash_password("RadioPassword123!"),
+                role="radiologist",
+                full_name="Dr. James Wilson, MD (Radiology)"
+            )
 
-    # 3. Pre-warm secure storage engine and ML model
+    # 4. Pre-warm secure storage engine and ML model
     get_storage()
     get_inference_engine()
 
@@ -94,8 +112,9 @@ def create_app() -> FastAPI:
             "and in-memory DenseNet121 AI-assisted pneumonia screening."
         ),
         version="2.0.0",
-        docs_url="/docs",
-        redoc_url="/redoc",
+        docs_url="/docs" if ENABLE_DOCS else None,
+        redoc_url="/redoc" if ENABLE_DOCS else None,
+        openapi_url="/openapi.json" if ENABLE_DOCS else None,
         lifespan=lifespan
     )
 

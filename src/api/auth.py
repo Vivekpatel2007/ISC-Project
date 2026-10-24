@@ -152,6 +152,11 @@ def require_roles(*allowed_roles: str):
     Example: Depends(require_roles("radiologist", "admin"))
     """
     def role_checker(current_user: Dict[str, Any] = Depends(oauth2_scheme)) -> None:
-        # Note: In actual endpoint use, the caller passes the result of get_current_user
-        pass
+        user_role = current_user.get("role") if isinstance(current_user, dict) else None
+        if user_role and user_role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Forbidden: role '{user_role}' is not authorized to access this resource."
+            )
     return role_checker
+

@@ -18,8 +18,16 @@ load_dotenv(override=False)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
+# Environment Mode
+APP_ENV = os.getenv("APP_ENV", os.getenv("ENVIRONMENT", "development")).lower()
+IS_PRODUCTION = APP_ENV in ("production", "prod")
+ENFORCE_HTTPS = os.getenv("ENFORCE_HTTPS", "false").lower() in ("true", "1", "yes")
+ENABLE_DOCS = os.getenv("ENABLE_DOCS", "true" if not IS_PRODUCTION else "false").lower() in ("true", "1", "yes")
+SEED_DEMO_USERS = os.getenv("SEED_DEMO_USERS", "true" if not IS_PRODUCTION else "false").lower() in ("true", "1", "yes")
+
 # Security & Tokens
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "insecure-dev-jwt-secret-key-replace-in-production-32bytes")
+INSECURE_DEV_JWT_SECRET = "insecure-dev-jwt-secret-key-replace-in-production-32bytes"
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", INSECURE_DEV_JWT_SECRET)
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
@@ -44,3 +52,46 @@ CORS_ORIGINS: List[str] = [
     for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173").split(",")
     if origin.strip()
 ]
+
+
+def validate_production_config() -> None:
+    """
+    Validate that critical secrets and storage configurations meet production security requirements.
+    Fails fast with RuntimeError if any insecure defaults or missing keys are detected in production mode.
+    """
+    if not IS_PRODUCTION:
+        return
+
+    # 1. Enforce strong JWT secret
+    if not JWT_SECRET_KEY or JWT_SECRET_KEY == INSECURE_DEV_JWT_SECRET:
+        raise RuntimeError(
+            "FATAL SECURITY CONFIGURATION: In production mode (APP_ENV=production), "
+            "a strong, cryptographically random JWT_SECRET_KEY (min 32 bytes) must be set via environment. "
+            "The default development key is strictly prohibited."
+        )
+
+    if len(JWT_SECRET_KEY) < 32:
+        raise RuntimeError(
+            f"FATAL SECURITY CONFIGURATION: JWT_SECRET_KEY must be at least 32 characters in production. "
+            f"Provided key has only {len(JWT_SECRET_KEY)} characters."
+        )
+
+    # 2. Enforce explicit AES encryption key
+    if not IMAGE_ENCRYPTION_KEY or not IMAGE_ENCRYPTION_KEY.strip():
+        raise RuntimeError(
+            "FATAL SECURITY CONFIGURATION: In production mode (APP_ENV=production), "
+            "IMAGE_ENCRYPTION_KEY must be explicitly set to a 256-bit Base64-encoded key. "
+            "Ephemeral or hardcoded key fallbacks are strictly prohibited."
+        )
+
+    # Verify key can be decoded
+    from src.security.key_manager import base64_to_key
+    try:
+        raw_key = base64_to_key(IMAGE_ENCRYPTION_KEY)
+        if len(raw_key) != 32:
+            raise RuntimeError("Key length mismatch.")
+    except Exception as e:
+        raise RuntimeError(
+            f"FATAL SECURITY CONFIGURATION: IMAGE_ENCRYPTION_KEY failed validation: {e}"
+        ) from None
+
