@@ -1,0 +1,1097 @@
+{
+  "total_false_positives": 120,
+  "total_false_negatives": 1,
+  "false_positives": [
+    {
+      "index": 144,
+      "filename": "NORMAL2-IM-0256-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0256-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 1.0,
+      "normal_prob": 0.0
+    },
+    {
+      "index": 16,
+      "filename": "IM-0022-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0022-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999998807907104,
+      "normal_prob": 1.1920928955078125e-07
+    },
+    {
+      "index": 140,
+      "filename": "NORMAL2-IM-0246-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0246-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999994039535522,
+      "normal_prob": 5.960464477539062e-07
+    },
+    {
+      "index": 133,
+      "filename": "NORMAL2-IM-0232-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0232-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.999998927116394,
+      "normal_prob": 1.0728836059570312e-06
+    },
+    {
+      "index": 143,
+      "filename": "NORMAL2-IM-0252-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0252-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999972581863403,
+      "normal_prob": 2.7418136596679688e-06
+    },
+    {
+      "index": 193,
+      "filename": "NORMAL2-IM-0330-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0330-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999972581863403,
+      "normal_prob": 2.7418136596679688e-06
+    },
+    {
+      "index": 52,
+      "filename": "IM-0085-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0085-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999932050704956,
+      "normal_prob": 6.794929504394531e-06
+    },
+    {
+      "index": 119,
+      "filename": "NORMAL2-IM-0195-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0195-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999924898147583,
+      "normal_prob": 7.510185241699219e-06
+    },
+    {
+      "index": 134,
+      "filename": "NORMAL2-IM-0233-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0233-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999920129776001,
+      "normal_prob": 7.987022399902344e-06
+    },
+    {
+      "index": 181,
+      "filename": "NORMAL2-IM-0315-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0315-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999892711639404,
+      "normal_prob": 1.0728836059570312e-05
+    },
+    {
+      "index": 45,
+      "filename": "IM-0073-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0073-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999867677688599,
+      "normal_prob": 1.3232231140136719e-05
+    },
+    {
+      "index": 121,
+      "filename": "NORMAL2-IM-0198-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0198-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999855756759644,
+      "normal_prob": 1.4424324035644531e-05
+    },
+    {
+      "index": 56,
+      "filename": "IM-0091-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0091-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999841451644897,
+      "normal_prob": 1.5854835510253906e-05
+    },
+    {
+      "index": 136,
+      "filename": "NORMAL2-IM-0238-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0238-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999809265136719,
+      "normal_prob": 1.9073486328125e-05
+    },
+    {
+      "index": 126,
+      "filename": "NORMAL2-IM-0210-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0210-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999788999557495,
+      "normal_prob": 2.110004425048828e-05
+    },
+    {
+      "index": 219,
+      "filename": "NORMAL2-IM-0362-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0362-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.999972939491272,
+      "normal_prob": 2.7060508728027344e-05
+    },
+    {
+      "index": 209,
+      "filename": "NORMAL2-IM-0349-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0349-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999692440032959,
+      "normal_prob": 3.075599670410156e-05
+    },
+    {
+      "index": 124,
+      "filename": "NORMAL2-IM-0206-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0206-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999302625656128,
+      "normal_prob": 6.973743438720703e-05
+    },
+    {
+      "index": 221,
+      "filename": "NORMAL2-IM-0366-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0366-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999291896820068,
+      "normal_prob": 7.081031799316406e-05
+    },
+    {
+      "index": 129,
+      "filename": "NORMAL2-IM-0219-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0219-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.999906063079834,
+      "normal_prob": 9.393692016601562e-05
+    },
+    {
+      "index": 130,
+      "filename": "NORMAL2-IM-0221-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0221-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999035596847534,
+      "normal_prob": 9.644031524658203e-05
+    },
+    {
+      "index": 223,
+      "filename": "NORMAL2-IM-0369-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0369-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999020099639893,
+      "normal_prob": 9.799003601074219e-05
+    },
+    {
+      "index": 67,
+      "filename": "IM-0110-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0110-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9999004602432251,
+      "normal_prob": 9.953975677490234e-05
+    },
+    {
+      "index": 197,
+      "filename": "NORMAL2-IM-0335-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0335-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9998741149902344,
+      "normal_prob": 0.000125885009765625
+    },
+    {
+      "index": 146,
+      "filename": "NORMAL2-IM-0267-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0267-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9998239874839783,
+      "normal_prob": 0.00017601251602172852
+    },
+    {
+      "index": 228,
+      "filename": "NORMAL2-IM-0374-0001-0002.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0374-0001-0002.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9998176693916321,
+      "normal_prob": 0.00018233060836791992
+    },
+    {
+      "index": 200,
+      "filename": "NORMAL2-IM-0338-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0338-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9997367262840271,
+      "normal_prob": 0.0002632737159729004
+    },
+    {
+      "index": 145,
+      "filename": "NORMAL2-IM-0259-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0259-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9996787309646606,
+      "normal_prob": 0.00032126903533935547
+    },
+    {
+      "index": 217,
+      "filename": "NORMAL2-IM-0360-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0360-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9994907379150391,
+      "normal_prob": 0.0005092620849609375
+    },
+    {
+      "index": 222,
+      "filename": "NORMAL2-IM-0368-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0368-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9994578957557678,
+      "normal_prob": 0.0005421042442321777
+    },
+    {
+      "index": 160,
+      "filename": "NORMAL2-IM-0285-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0285-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9993371367454529,
+      "normal_prob": 0.0006628632545471191
+    },
+    {
+      "index": 61,
+      "filename": "IM-0101-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0101-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9992833733558655,
+      "normal_prob": 0.0007166266441345215
+    },
+    {
+      "index": 167,
+      "filename": "NORMAL2-IM-0294-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0294-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9992221593856812,
+      "normal_prob": 0.0007778406143188477
+    },
+    {
+      "index": 195,
+      "filename": "NORMAL2-IM-0332-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0332-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9991832375526428,
+      "normal_prob": 0.0008167624473571777
+    },
+    {
+      "index": 186,
+      "filename": "NORMAL2-IM-0322-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0322-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9989494681358337,
+      "normal_prob": 0.0010505318641662598
+    },
+    {
+      "index": 230,
+      "filename": "NORMAL2-IM-0376-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0376-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9989350438117981,
+      "normal_prob": 0.0010649561882019043
+    },
+    {
+      "index": 147,
+      "filename": "NORMAL2-IM-0271-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0271-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9988948702812195,
+      "normal_prob": 0.0011051297187805176
+    },
+    {
+      "index": 46,
+      "filename": "IM-0075-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0075-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9987863898277283,
+      "normal_prob": 0.0012136101722717285
+    },
+    {
+      "index": 218,
+      "filename": "NORMAL2-IM-0361-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0361-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9986955523490906,
+      "normal_prob": 0.0013044476509094238
+    },
+    {
+      "index": 172,
+      "filename": "NORMAL2-IM-0303-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0303-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9986826777458191,
+      "normal_prob": 0.0013173222541809082
+    },
+    {
+      "index": 44,
+      "filename": "IM-0071-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0071-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9985841512680054,
+      "normal_prob": 0.001415848731994629
+    },
+    {
+      "index": 220,
+      "filename": "NORMAL2-IM-0364-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0364-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9984691739082336,
+      "normal_prob": 0.0015308260917663574
+    },
+    {
+      "index": 171,
+      "filename": "NORMAL2-IM-0302-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0302-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9984021782875061,
+      "normal_prob": 0.0015978217124938965
+    },
+    {
+      "index": 198,
+      "filename": "NORMAL2-IM-0336-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0336-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9982143640518188,
+      "normal_prob": 0.0017856359481811523
+    },
+    {
+      "index": 159,
+      "filename": "NORMAL2-IM-0283-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0283-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9981288313865662,
+      "normal_prob": 0.0018711686134338379
+    },
+    {
+      "index": 165,
+      "filename": "NORMAL2-IM-0290-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0290-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9972690939903259,
+      "normal_prob": 0.0027309060096740723
+    },
+    {
+      "index": 131,
+      "filename": "NORMAL2-IM-0222-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0222-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9970878958702087,
+      "normal_prob": 0.0029121041297912598
+    },
+    {
+      "index": 123,
+      "filename": "NORMAL2-IM-0201-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0201-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9963500499725342,
+      "normal_prob": 0.0036499500274658203
+    },
+    {
+      "index": 132,
+      "filename": "NORMAL2-IM-0229-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0229-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9962419271469116,
+      "normal_prob": 0.003758072853088379
+    },
+    {
+      "index": 48,
+      "filename": "IM-0079-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0079-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9956262111663818,
+      "normal_prob": 0.004373788833618164
+    },
+    {
+      "index": 120,
+      "filename": "NORMAL2-IM-0196-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0196-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9948403239250183,
+      "normal_prob": 0.0051596760749816895
+    },
+    {
+      "index": 226,
+      "filename": "NORMAL2-IM-0373-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0373-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9946671724319458,
+      "normal_prob": 0.005332827568054199
+    },
+    {
+      "index": 153,
+      "filename": "NORMAL2-IM-0277-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0277-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.994594156742096,
+      "normal_prob": 0.005405843257904053
+    },
+    {
+      "index": 122,
+      "filename": "NORMAL2-IM-0199-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0199-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.994551956653595,
+      "normal_prob": 0.005448043346405029
+    },
+    {
+      "index": 62,
+      "filename": "IM-0102-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0102-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9945201277732849,
+      "normal_prob": 0.005479872226715088
+    },
+    {
+      "index": 190,
+      "filename": "NORMAL2-IM-0327-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0327-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.994455873966217,
+      "normal_prob": 0.005544126033782959
+    },
+    {
+      "index": 135,
+      "filename": "NORMAL2-IM-0237-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0237-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9937466382980347,
+      "normal_prob": 0.006253361701965332
+    },
+    {
+      "index": 182,
+      "filename": "NORMAL2-IM-0316-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0316-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9933589100837708,
+      "normal_prob": 0.006641089916229248
+    },
+    {
+      "index": 142,
+      "filename": "NORMAL2-IM-0251-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0251-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9932550191879272,
+      "normal_prob": 0.006744980812072754
+    },
+    {
+      "index": 207,
+      "filename": "NORMAL2-IM-0347-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0347-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9912716746330261,
+      "normal_prob": 0.008728325366973877
+    },
+    {
+      "index": 128,
+      "filename": "NORMAL2-IM-0217-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0217-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9904959201812744,
+      "normal_prob": 0.009504079818725586
+    },
+    {
+      "index": 163,
+      "filename": "NORMAL2-IM-0288-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0288-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9877113699913025,
+      "normal_prob": 0.01228863000869751
+    },
+    {
+      "index": 173,
+      "filename": "NORMAL2-IM-0304-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0304-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9877113699913025,
+      "normal_prob": 0.01228863000869751
+    },
+    {
+      "index": 14,
+      "filename": "IM-0019-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0019-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9874235987663269,
+      "normal_prob": 0.012576401233673096
+    },
+    {
+      "index": 158,
+      "filename": "NORMAL2-IM-0282-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0282-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9873506426811218,
+      "normal_prob": 0.012649357318878174
+    },
+    {
+      "index": 154,
+      "filename": "NORMAL2-IM-0278-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0278-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9849563241004944,
+      "normal_prob": 0.015043675899505615
+    },
+    {
+      "index": 156,
+      "filename": "NORMAL2-IM-0280-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0280-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.982740581035614,
+      "normal_prob": 0.017259418964385986
+    },
+    {
+      "index": 233,
+      "filename": "NORMAL2-IM-0381-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0381-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9797065258026123,
+      "normal_prob": 0.020293474197387695
+    },
+    {
+      "index": 11,
+      "filename": "IM-0015-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0015-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9745803475379944,
+      "normal_prob": 0.025419652462005615
+    },
+    {
+      "index": 152,
+      "filename": "NORMAL2-IM-0276-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0276-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9728307723999023,
+      "normal_prob": 0.027169227600097656
+    },
+    {
+      "index": 40,
+      "filename": "IM-0065-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0065-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9698712229728699,
+      "normal_prob": 0.030128777027130127
+    },
+    {
+      "index": 213,
+      "filename": "NORMAL2-IM-0353-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0353-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9690324664115906,
+      "normal_prob": 0.030967533588409424
+    },
+    {
+      "index": 49,
+      "filename": "IM-0081-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0081-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9673795104026794,
+      "normal_prob": 0.03262048959732056
+    },
+    {
+      "index": 157,
+      "filename": "NORMAL2-IM-0281-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0281-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9626027941703796,
+      "normal_prob": 0.03739720582962036
+    },
+    {
+      "index": 168,
+      "filename": "NORMAL2-IM-0297-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0297-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9549844264984131,
+      "normal_prob": 0.045015573501586914
+    },
+    {
+      "index": 3,
+      "filename": "IM-0006-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0006-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9480584859848022,
+      "normal_prob": 0.051941514015197754
+    },
+    {
+      "index": 141,
+      "filename": "NORMAL2-IM-0249-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0249-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9442282915115356,
+      "normal_prob": 0.055771708488464355
+    },
+    {
+      "index": 115,
+      "filename": "NORMAL2-IM-0150-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0150-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9314001798629761,
+      "normal_prob": 0.06859982013702393
+    },
+    {
+      "index": 231,
+      "filename": "NORMAL2-IM-0378-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0378-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9289263486862183,
+      "normal_prob": 0.07107365131378174
+    },
+    {
+      "index": 202,
+      "filename": "NORMAL2-IM-0340-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0340-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9282138347625732,
+      "normal_prob": 0.07178616523742676
+    },
+    {
+      "index": 1,
+      "filename": "IM-0003-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0003-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9267027974128723,
+      "normal_prob": 0.07329720258712769
+    },
+    {
+      "index": 54,
+      "filename": "IM-0087-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0087-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9239361882209778,
+      "normal_prob": 0.07606381177902222
+    },
+    {
+      "index": 210,
+      "filename": "NORMAL2-IM-0350-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0350-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9148629307746887,
+      "normal_prob": 0.08513706922531128
+    },
+    {
+      "index": 53,
+      "filename": "IM-0086-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0086-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9139840602874756,
+      "normal_prob": 0.08601593971252441
+    },
+    {
+      "index": 205,
+      "filename": "NORMAL2-IM-0345-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0345-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9120060801506042,
+      "normal_prob": 0.08799391984939575
+    },
+    {
+      "index": 138,
+      "filename": "NORMAL2-IM-0246-0001-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0246-0001-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9104260206222534,
+      "normal_prob": 0.08957397937774658
+    },
+    {
+      "index": 139,
+      "filename": "NORMAL2-IM-0246-0001-0002.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0246-0001-0002.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9104260206222534,
+      "normal_prob": 0.08957397937774658
+    },
+    {
+      "index": 8,
+      "filename": "IM-0011-0001-0002.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0011-0001-0002.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.910186767578125,
+      "normal_prob": 0.089813232421875
+    },
+    {
+      "index": 215,
+      "filename": "NORMAL2-IM-0357-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0357-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.9041438698768616,
+      "normal_prob": 0.09585613012313843
+    },
+    {
+      "index": 47,
+      "filename": "IM-0077-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0077-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.897335946559906,
+      "normal_prob": 0.102664053440094
+    },
+    {
+      "index": 174,
+      "filename": "NORMAL2-IM-0305-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0305-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.884986937046051,
+      "normal_prob": 0.11501306295394897
+    },
+    {
+      "index": 216,
+      "filename": "NORMAL2-IM-0359-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0359-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.8837887048721313,
+      "normal_prob": 0.11621129512786865
+    },
+    {
+      "index": 34,
+      "filename": "IM-0046-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0046-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.8614217042922974,
+      "normal_prob": 0.13857829570770264
+    },
+    {
+      "index": 232,
+      "filename": "NORMAL2-IM-0380-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0380-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.8594279289245605,
+      "normal_prob": 0.14057207107543945
+    },
+    {
+      "index": 28,
+      "filename": "IM-0036-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0036-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.8579169511795044,
+      "normal_prob": 0.1420830488204956
+    },
+    {
+      "index": 184,
+      "filename": "NORMAL2-IM-0319-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0319-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.8331210017204285,
+      "normal_prob": 0.16687899827957153
+    },
+    {
+      "index": 227,
+      "filename": "NORMAL2-IM-0374-0001-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0374-0001-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7942253947257996,
+      "normal_prob": 0.20577460527420044
+    },
+    {
+      "index": 180,
+      "filename": "NORMAL2-IM-0313-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0313-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7891525030136108,
+      "normal_prob": 0.21084749698638916
+    },
+    {
+      "index": 26,
+      "filename": "IM-0033-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0033-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7824963331222534,
+      "normal_prob": 0.21750366687774658
+    },
+    {
+      "index": 170,
+      "filename": "NORMAL2-IM-0301-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0301-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7784388661384583,
+      "normal_prob": 0.22156113386154175
+    },
+    {
+      "index": 116,
+      "filename": "NORMAL2-IM-0171-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0171-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7777643799781799,
+      "normal_prob": 0.22223562002182007
+    },
+    {
+      "index": 59,
+      "filename": "IM-0097-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0097-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7676898241043091,
+      "normal_prob": 0.23231017589569092
+    },
+    {
+      "index": 57,
+      "filename": "IM-0093-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0093-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7590468525886536,
+      "normal_prob": 0.24095314741134644
+    },
+    {
+      "index": 194,
+      "filename": "NORMAL2-IM-0331-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0331-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7581526637077332,
+      "normal_prob": 0.24184733629226685
+    },
+    {
+      "index": 191,
+      "filename": "NORMAL2-IM-0328-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0328-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7490413188934326,
+      "normal_prob": 0.2509586811065674
+    },
+    {
+      "index": 117,
+      "filename": "NORMAL2-IM-0173-0001-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0173-0001-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7475237846374512,
+      "normal_prob": 0.25247621536254883
+    },
+    {
+      "index": 118,
+      "filename": "NORMAL2-IM-0173-0001-0002.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0173-0001-0002.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7475237846374512,
+      "normal_prob": 0.25247621536254883
+    },
+    {
+      "index": 151,
+      "filename": "NORMAL2-IM-0275-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0275-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7473855018615723,
+      "normal_prob": 0.25261449813842773
+    },
+    {
+      "index": 188,
+      "filename": "NORMAL2-IM-0325-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0325-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7358789443969727,
+      "normal_prob": 0.26412105560302734
+    },
+    {
+      "index": 127,
+      "filename": "NORMAL2-IM-0213-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0213-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7324004769325256,
+      "normal_prob": 0.26759952306747437
+    },
+    {
+      "index": 137,
+      "filename": "NORMAL2-IM-0241-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0241-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.7100003361701965,
+      "normal_prob": 0.28999966382980347
+    },
+    {
+      "index": 98,
+      "filename": "NORMAL2-IM-0105-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0105-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.6998445391654968,
+      "normal_prob": 0.3001554608345032
+    },
+    {
+      "index": 161,
+      "filename": "NORMAL2-IM-0286-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0286-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.6997675895690918,
+      "normal_prob": 0.3002324104309082
+    },
+    {
+      "index": 68,
+      "filename": "IM-0111-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0111-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.6993570923805237,
+      "normal_prob": 0.3006429076194763
+    },
+    {
+      "index": 22,
+      "filename": "IM-0030-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0030-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.6899849772453308,
+      "normal_prob": 0.3100150227546692
+    },
+    {
+      "index": 29,
+      "filename": "IM-0037-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0037-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.6782203912734985,
+      "normal_prob": 0.32177960872650146
+    },
+    {
+      "index": 225,
+      "filename": "NORMAL2-IM-0372-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0372-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.6498703360557556,
+      "normal_prob": 0.3501296639442444
+    },
+    {
+      "index": 15,
+      "filename": "IM-0021-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0021-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.6380603909492493,
+      "normal_prob": 0.36193960905075073
+    },
+    {
+      "index": 51,
+      "filename": "IM-0084-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\IM-0084-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.6371719241142273,
+      "normal_prob": 0.3628280758857727
+    },
+    {
+      "index": 109,
+      "filename": "NORMAL2-IM-0132-0001.jpeg",
+      "path": "data\\model_data\\test\\NORMAL\\NORMAL2-IM-0132-0001.jpeg",
+      "true_label": "NORMAL",
+      "predicted_label": "PNEUMONIA",
+      "pneumonia_prob": 0.625893771648407,
+      "normal_prob": 0.374106228351593
+    }
+  ],
+  "false_negatives": [
+    {
+      "index": 391,
+      "filename": "person154_bacteria_728.jpeg",
+      "path": "data\\model_data\\test\\PNEUMONIA\\person154_bacteria_728.jpeg",
+      "true_label": "PNEUMONIA",
+      "predicted_label": "NORMAL",
+      "pneumonia_prob": 0.5805304050445557,
+      "normal_prob": 0.41946959495544434
+    }
+  ]
+}

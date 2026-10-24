@@ -1,0 +1,88 @@
+{
+  "train_NORMAL": {
+    "count": 1140,
+    "modes": [
+      "L"
+    ],
+    "mean_width": 1664.3947368421052,
+    "std_width": 286.01829528101354,
+    "mean_height": 1377.1070175438597,
+    "std_height": 323.0538613283784,
+    "mean_aspect_ratio": 1.2290673869510786,
+    "pixel_mean": 122.50166326823988,
+    "pixel_mean_std": 12.988153754437239,
+    "pixel_std": 61.439829304343775
+  },
+  "train_PNEUMONIA": {
+    "count": 3293,
+    "modes": [
+      "L",
+      "RGB"
+    ],
+    "mean_width": 1198.344063164288,
+    "std_width": 291.50036978797715,
+    "mean_height": 823.094442757364,
+    "std_height": 275.6040686944407,
+    "mean_aspect_ratio": 1.5143705380507946,
+    "pixel_mean": 123.25369608369671,
+    "pixel_mean_std": 20.245055009769505,
+    "pixel_std": 55.32321216804511
+  },
+  "val_NORMAL": {
+    "count": 201,
+    "modes": [
+      "L"
+    ],
+    "mean_width": 1686.676616915423,
+    "std_width": 305.3180380825942,
+    "mean_height": 1405.955223880597,
+    "std_height": 342.4615648043346,
+    "mean_aspect_ratio": 1.220558803298061,
+    "pixel_mean": 121.6654098282999,
+    "pixel_mean_std": 12.686148804725995,
+    "pixel_std": 61.413567044841706
+  },
+  "val_PNEUMONIA": {
+    "count": 582,
+    "modes": [
+      "L",
+      "RGB"
+    ],
+    "mean_width": 1212.589347079038,
+    "std_width": 289.6527689375365,
+    "mean_height": 835.9604810996564,
+    "std_height": 284.76858058143716,
+    "mean_aspect_ratio": 1.5102728588557792,
+    "pixel_mean": 122.89524107208776,
+    "pixel_mean_std": 19.29386814151709,
+    "pixel_std": 55.44657281829729
+  },
+  "test_NORMAL": {
+    "count": 234,
+    "modes": [
+      "L"
+    ],
+    "mean_width": 1800.3034188034187,
+    "std_width": 365.14773650604934,
+    "mean_height": 1369.0897435897436,
+    "std_height": 428.2607596673719,
+    "mean_aspect_ratio": 1.3680920437801325,
+    "pixel_mean": 124.07342679276425,
+    "pixel_mean_std": 16.037748868615854,
+    "pixel_std": 60.17458871694711
+  },
+  "test_PNEUMONIA": {
+    "count": 390,
+    "modes": [
+      "L"
+    ],
+    "mean_width": 1140.823076923077,
+    "std_width": 208.59048821829802,
+    "mean_height": 765.2897435897436,
+    "std_height": 192.84975059631904,
+    "mean_aspect_ratio": 1.5273490570207964,
+    "pixel_mean": 119.22576410342485,
+    "pixel_mean_std": 17.26735789823705,
+    "pixel_std": 55.966881742232886
+  }
+}

@@ -1,0 +1,31 @@
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Secrets, Keys, and Environment configurations (NEVER COMMIT)
+.env
+*.env
+*.key
+*.pem
+*.secret
+secrets/
+
+# Secure Medical Storage (Contains encrypted patient scans & local metadata DB)
+secure_data/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

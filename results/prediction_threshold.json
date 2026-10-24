@@ -1,0 +1,11 @@
+{
+  "threshold": 0.4000000000000001,
+  "selection_metric": "balanced_accuracy",
+  "validation_metric_value": 0.9932169051648971,
+  "validation_balanced_accuracy": 0.9932169051648971,
+  "validation_sensitivity": 0.9914089347079038,
+  "validation_specificity": 0.9950248756218906,
+  "validation_macro_f1": 0.990024630541872,
+  "validation_roc_auc": 0.9992648441640594,
+  "model_file": "densenet121_pneumonia_best.pth"
+}

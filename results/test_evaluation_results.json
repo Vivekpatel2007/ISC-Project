@@ -1,0 +1,35 @@
+{
+  "model_file": "densenet121_pneumonia_best.pth",
+  "threshold": 0.4000000000000001,
+  "threshold_source": "checkpoint metadata (balanced_accuracy)",
+  "accuracy": 0.8493589743589743,
+  "balanced_accuracy": 0.8,
+  "roc_auc": 0.961911023449485,
+  "pr_auc": 0.965018122487998,
+  "sensitivity": 0.9974358974358974,
+  "specificity": 0.6025641025641025,
+  "normal_precision": 0.9929577464788732,
+  "normal_recall": 0.6025641025641025,
+  "normal_f1": 0.75,
+  "pneumonia_precision": 0.8070539419087137,
+  "pneumonia_recall": 0.9974358974358974,
+  "pneumonia_f1": 0.8922018348623854,
+  "macro_f1": 0.8211009174311927,
+  "weighted_f1": 0.8388761467889909,
+  "confusion_matrix": {
+    "TN": 141,
+    "FP": 93,
+    "FN": 1,
+    "TP": 389,
+    "raw": [
+      [
+        141,
+        93
+      ],
+      [
+        1,
+        389
+      ]
+    ]
+  }
+}

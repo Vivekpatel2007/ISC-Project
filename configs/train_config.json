@@ -1,0 +1,53 @@
+{
+  "model": {
+    "architecture": "densenet121",
+    "pretrained": true,
+    "num_classes": 2,
+    "drop_rate": 0.2
+  },
+  "data": {
+    "data_dir": "data/model_data",
+    "image_size": 224,
+    "batch_size": 16,
+    "num_workers": 0,
+    "normalization": {
+      "mean": [0.485, 0.456, 0.406],
+      "std": [0.229, 0.224, 0.225]
+    },
+    "augmentation": {
+      "strategy": "conservative_medical",
+      "rotation_degrees": 10,
+      "translate": [0.04, 0.04],
+      "scale": [0.96, 1.04],
+      "brightness_jitter": 0.10,
+      "contrast_jitter": 0.10,
+      "horizontal_flip_prob": 0.30
+    }
+  },
+  "training": {
+    "epochs": 15,
+    "learning_rate": 0.0001,
+    "backbone_lr_ratio": 0.5,
+    "weight_decay": 0.01,
+    "optimizer": "AdamW",
+    "scheduler": "CosineAnnealingLR",
+    "scheduler_t_max": 15,
+    "scheduler_eta_min": 1e-6,
+    "mixed_precision": true,
+    "imbalance_handling": "effective_class_weights",
+    "early_stopping": {
+      "enabled": true,
+      "patience": 5,
+      "min_delta": 0.0005,
+      "monitor_metric": "val_roc_auc",
+      "mode": "max"
+    },
+    "seed": 42
+  },
+  "paths": {
+    "model_save_path": "models/densenet121_pneumonia_best.pth",
+    "history_save_path": "results/training_history.json",
+    "threshold_save_path": "results/prediction_threshold.json",
+    "metrics_save_path": "results/training_metrics.json"
+  }
+}

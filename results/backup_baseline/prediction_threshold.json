@@ -1,0 +1,6 @@
+{
+  "threshold": 0.6200000000000001,
+  "selection_metric": "balanced_accuracy",
+  "validation_balanced_accuracy": 0.9899599938452069,
+  "model": "densenet121_pneumonia_best.pth"
+}

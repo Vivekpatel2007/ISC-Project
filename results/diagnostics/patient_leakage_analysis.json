@@ -1,0 +1,62 @@
+{
+  "split_counts": {
+    "train": {
+      "NORMAL": 1140,
+      "PNEUMONIA": 3293
+    },
+    "val": {
+      "NORMAL": 201,
+      "PNEUMONIA": 582
+    },
+    "test": {
+      "NORMAL": 234,
+      "PNEUMONIA": 390
+    }
+  },
+  "patient_overlap_analysis": {
+    "NORMAL": {
+      "total_unique_patient_ids": 584,
+      "train_patient_ids": 449,
+      "val_patient_ids": 82,
+      "test_patient_ids": 66,
+      "train_val_overlap_count": 12,
+      "train_val_overlap_percent_of_val": 14.63,
+      "train_test_overlap_count": 1,
+      "val_test_overlap_count": 1,
+      "sample_train_val_overlap_pids": [
+        "IM-0517",
+        "IM-0629",
+        "NORMAL2-IM",
+        "IM-0644",
+        "IM-0553",
+        "IM-0509",
+        "IM-0626",
+        "IM-0551",
+        "IM-0549",
+        "IM-0525"
+      ]
+    },
+    "PNEUMONIA": {
+      "total_unique_patient_ids": 1667,
+      "train_patient_ids": 1530,
+      "val_patient_ids": 461,
+      "test_patient_ids": 202,
+      "train_val_overlap_count": 356,
+      "train_val_overlap_percent_of_val": 77.22,
+      "train_test_overlap_count": 155,
+      "val_test_overlap_count": 48,
+      "sample_train_val_overlap_pids": [
+        "person534",
+        "person673",
+        "person25",
+        "person837",
+        "person774",
+        "person328",
+        "person1341",
+        "person836",
+        "person481",
+        "person1582"
+      ]
+    }
+  }
+}
