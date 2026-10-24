@@ -70,7 +70,8 @@ class SecureImageStorage:
         self,
         image_bytes: bytes,
         patient_id: str,
-        associated_data: Optional[bytes] = None
+        associated_data: Optional[bytes] = None,
+        uploaded_by: str = "system"
     ) -> Dict[str, Any]:
         """
         Encrypt and securely store a medical chest X-ray image.
@@ -79,6 +80,7 @@ class SecureImageStorage:
             image_bytes: The raw image bytes (e.g. JPEG/PNG/DICOM).
             patient_id: Pseudonymous identifier (e.g. 'ANON-10492').
             associated_data: Optional authenticated metadata for AEAD.
+            uploaded_by: Username of authenticated user who uploaded the scan.
 
         Returns:
             Dictionary containing stored scan metadata (scan_id, patient_id, sha256, etc.).
@@ -127,7 +129,8 @@ class SecureImageStorage:
                 encrypted_filename=final_path.name,
                 original_sha256=original_sha256,
                 file_size_bytes=len(encrypted_container),
-                format_version=CURRENT_VERSION
+                format_version=CURRENT_VERSION,
+                uploaded_by=uploaded_by
             )
             return record
         except Exception as e:
