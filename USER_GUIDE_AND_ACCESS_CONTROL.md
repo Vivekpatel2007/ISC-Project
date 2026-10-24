@@ -206,7 +206,7 @@ sequenceDiagram
     SEC->>DISK: Read PX01 binary container bytes
     SEC->>SEC: Parse PX01 header, extract 96-bit nonce & 128-bit tag
     SEC->>SEC: AES-256-GCM decrypt & verify tag in memory
-    Note over SEC: If 1 bit is tampered, raises AuthenticationError -> HTTP 409
+    Note over SEC: If 1 bit is tampered, raises AuthenticationError (HTTP 409)
     SEC->>SEC: Verify SHA-256 matches database record
     SEC-->>API: Return decrypted raw image bytes in memory
     API->>ML: predict(image_bytes)
@@ -227,18 +227,18 @@ PulmoScan operates as a synchronized, decoupled multi-tier architecture:
 
 ```mermaid
 graph TD
-    subgraph Client Tier [Client Tier - Browser]
-        UI[Next.js 16 Web Application\nReact 19 + Tailwind CSS + Lucide Icons]
-        MemAuth[In-Memory Auth Context\nVolatile JavaScript React State]
+    subgraph ClientTier ["Client Tier - Browser"]
+        UI["Next.js 16 Web Application\nReact 19 + Tailwind CSS + Lucide Icons"]
+        MemAuth["In-Memory Auth Context\nVolatile JavaScript React State"]
         UI --- MemAuth
     end
 
-    subgraph Application Tier [Application Tier - Python 3.14 / FastAPI]
-        Proxy[FastAPI REST API\nUvicorn ASGI Server :8000]
-        SecHeaders[Security Headers Middleware\nCSP, HSTS, X-Frame-Options, Nosniff]
-        CORS[CORS Policy\nStrict Origin Whitelist]
-        RateLimiter[Sliding-Window Rate Limiter\nLogin: 10/min, Inference: 30/min]
-        RBAC[RBAC & Ownership Dependency\nverify_scan_access & require_role]
+    subgraph ApplicationTier ["Application Tier - Python 3.14 / FastAPI"]
+        Proxy["FastAPI REST API\nUvicorn ASGI Server :8000"]
+        SecHeaders["Security Headers Middleware\nCSP, HSTS, X-Frame-Options, Nosniff"]
+        CORS["CORS Policy\nStrict Origin Whitelist"]
+        RateLimiter["Sliding-Window Rate Limiter\nLogin: 10/min, Inference: 30/min"]
+        RBAC["RBAC & Ownership Dependency\nverify_scan_access & require_role"]
         
         Proxy --> SecHeaders
         SecHeaders --> CORS
@@ -246,11 +246,11 @@ graph TD
         RateLimiter --> RBAC
     end
 
-    subgraph Security & Storage Tier [Cryptographic & Persistence Tier]
-        AES[AES-256-GCM Engine\nPX01 Binary Packaging]
-        KeyMgr[Key Manager\n256-bit CSPRNG / Base64 URL-safe]
-        DiskEnc[(Encrypted Images Directory\nsecure_data/encrypted_images/*.enc)]
-        SQLite[(Metadata SQLite Database\nsecure_data/metadata.db)]
+    subgraph StorageTier ["Cryptographic & Persistence Tier"]
+        AES["AES-256-GCM Engine\nPX01 Binary Packaging"]
+        KeyMgr["Key Manager\n256-bit CSPRNG / Base64 URL-safe"]
+        DiskEnc[("Encrypted Images Directory\nsecure_data/encrypted_images/*.enc")]
+        SQLite[("Metadata SQLite Database\nsecure_data/metadata.db")]
         
         RBAC --> AES
         AES --> KeyMgr
@@ -258,11 +258,11 @@ graph TD
         RBAC --> SQLite
     end
 
-    subgraph Machine Learning Tier [Machine Learning Tier - PyTorch]
-        Prep[PIL Decoder & Validator\nDecompression Bomb Protection]
-        Transform[Standardized Eval Transforms\nGrayscale -> 3Ch -> 224x224 -> Norm]
-        Model[DenseNet121 Checkpoint\nRetrained Weights (models/*.pth)]
-        Inference[CUDA / CPU Inference Engine\nTuned Threshold 0.40]
+    subgraph MLTier ["Machine Learning Tier - PyTorch"]
+        Prep["PIL Decoder & Validator\nDecompression Bomb Protection"]
+        Transform["Standardized Eval Transforms\nGrayscale -> 3Ch -> 224x224 -> Norm"]
+        Model["DenseNet121 Checkpoint\nRetrained Weights (models/*.pth)"]
+        Inference["CUDA / CPU Inference Engine\nTuned Threshold 0.40"]
         
         RBAC --> Prep
         Prep --> Transform
@@ -478,17 +478,17 @@ Access control in PulmoScan is implemented across four distinct software layers:
 
 ```mermaid
 graph TD
-    subgraph Layer 1: UI Presentation
-        L1[Sidebar navigation, role badges, action buttons\nfrontend/src/components/layout/sidebar.tsx]
+    subgraph Layer1 ["Layer 1: UI Presentation"]
+        L1["Sidebar navigation, role badges, action buttons\nfrontend/src/components/layout/sidebar.tsx"]
     end
-    subgraph Layer 2: Client Route Guards
-        L2[AuthenticatedLayout wrapper & router.push\nfrontend/src/components/layout/authenticated-layout.tsx]
+    subgraph Layer2 ["Layer 2: Client Route Guards"]
+        L2["AuthenticatedLayout wrapper & router.push\nfrontend/src/components/layout/authenticated-layout.tsx"]
     end
-    subgraph Layer 3: Backend API Authorization
-        L3[FastAPI require_role & get_current_user dependencies\nsrc/api/dependencies.py]
+    subgraph Layer3 ["Layer 3: Backend API Authorization"]
+        L3["FastAPI require_role & get_current_user dependencies\nsrc/api/dependencies.py"]
     end
-    subgraph Layer 4: Object-Level Ownership Enforcement
-        L4[verify_scan_access checking scan.uploaded_by == current_user\nsrc/api/routers/scans.py]
+    subgraph Layer4 ["Layer 4: Object-Level Ownership Enforcement"]
+        L4["verify_scan_access checking scan.uploaded_by == current_user\nsrc/api/routers/scans.py"]
     end
 
     L1 --> L2
