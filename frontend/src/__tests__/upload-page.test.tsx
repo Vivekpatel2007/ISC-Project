@@ -8,6 +8,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import UploadPage from '@/app/upload/page';
 import { AuthProvider } from '@/context/auth-context';
+import { apiClient } from '@/lib/api-client';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -113,5 +114,25 @@ describe('UploadPage', () => {
     await waitFor(() => {
       expect(screen.getByText(/invalid patient identifier format/i)).toBeInTheDocument();
     });
+  });
+
+  it('prevents duplicate uploads and clears the preview after saving', async () => {
+    let finishUpload!: () => void;
+    const upload = vi.spyOn(apiClient, 'uploadScan').mockImplementationOnce(() => new Promise((resolve) => {
+      finishUpload = () => resolve({ scan_id: 'new-scan', patient_id: 'ANON-00941', file_size_bytes: 1024, format_version: 1, created_at: '2026-11-09T10:00:00Z', prediction_status: 'PENDING', predicted_class: null, prediction_probability: null, uploaded_by: 'doctor1' });
+    }));
+    render(<UploadPage />);
+    fireEvent.change(screen.getByLabelText('Choose chest radiograph'), { target: { files: [new File(['bytes'], 'xray.png', { type: 'image/png' })] } });
+    await screen.findByAltText('Local radiograph preview');
+    fireEvent.change(screen.getByLabelText(/pseudonymous patient identifier/i), { target: { value: 'ANON-00941' } });
+    const form = screen.getByRole('button', { name: /upload & encrypt radiograph/i }).closest('form')!;
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(upload).toHaveBeenCalledTimes(1);
+    finishUpload();
+    await screen.findByRole('heading', { name: 'Your radiograph is ready.' });
+    expect(screen.getByRole('link', { name: 'Continue to screening' })).toHaveAttribute('href', '/scans/new-scan');
+    expect(URL.revokeObjectURL).toHaveBeenCalled();
+    expect(screen.queryByAltText('Local radiograph preview')).not.toBeInTheDocument();
   });
 });

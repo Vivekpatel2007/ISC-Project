@@ -137,4 +137,24 @@ describe('ScanDetailPage', () => {
       { timeout: 3000 }
     );
   });
+
+  it('keeps a successful result visible when the subsequent metadata refresh fails', async () => {
+    vi.spyOn(apiClient, 'getScan').mockResolvedValueOnce(mockScanRecord).mockRejectedValueOnce(new Error('Status refresh unavailable'));
+    vi.spyOn(apiClient, 'predictScan').mockResolvedValueOnce(mockPredictionResult);
+    render(<ScanDetailPage params={{ id: 'scan-123-abc' }} />);
+    fireEvent.click(await screen.findByRole('button', { name: /run ai screening/i }));
+    await waitFor(() => expect(screen.getByText('95.40%')).toBeInTheDocument());
+    expect(screen.getByText(/Screening completed. The latest scan status could not be refreshed/i)).toBeInTheDocument();
+    expect(screen.queryByText('Screening could not complete')).not.toBeInTheDocument();
+  });
+
+  it('removes the previous result if a rerun detects corrupted ciphertext', async () => {
+    vi.spyOn(apiClient, 'predictScan').mockResolvedValueOnce(mockPredictionResult).mockRejectedValueOnce(new ApiError(409, 'Corrupted ciphertext'));
+    render(<ScanDetailPage params={{ id: 'scan-123-abc' }} />);
+    fireEvent.click(await screen.findByRole('button', { name: /run ai screening/i }));
+    await screen.findByText('95.40%');
+    fireEvent.click(screen.getByRole('button', { name: /re-run ai screening/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Integrity Tampering Error'));
+    expect(screen.queryByText('95.40%')).not.toBeInTheDocument();
+  });
 });

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
+import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import {
   Activity,
   Lock,
@@ -11,18 +11,26 @@ import {
   AlertCircle,
   ShieldCheck,
   Stethoscope,
-} from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
-import { ApiError } from '@/lib/types';
-import { getLoginPath, rememberLoginPortal, type LoginPortal } from '@/lib/login-portal';
+  ArrowRight,
+  Check,
+} from "lucide-react";
+import { useAuth } from "@/context/auth-context";
+import { ApiError } from "@/lib/types";
+import { Brand } from "@/components/ui";
+import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  getLoginPath,
+  rememberLoginPortal,
+  type LoginPortal,
+} from "@/lib/login-portal";
 
 export function LoginForm({ portal }: { portal: LoginPortal }) {
   const { login } = useAuth();
-  const isRadiologist = portal === 'radiologist';
+  const isRadiologist = portal === "radiologist";
   const formRef = useRef<HTMLFormElement>(null);
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -35,20 +43,20 @@ export function LoginForm({ portal }: { portal: LoginPortal }) {
       pendingLogin.current?.abort();
       pendingLogin.current = null;
       formRef.current?.reset();
-      setUsername('');
-      setPassword('');
+      setUsername("");
+      setPassword("");
       setShowPassword(false);
       setErrorMessage(null);
       setIsLoading(false);
       submitting.current = false;
     };
     // Clear both retained Next.js routes and native back/forward page restores.
-    window.addEventListener('pagehide', clearCredentials);
-    window.addEventListener('pageshow', clearCredentials);
+    window.addEventListener("pagehide", clearCredentials);
+    window.addEventListener("pageshow", clearCredentials);
     return () => {
       clearCredentials();
-      window.removeEventListener('pagehide', clearCredentials);
-      window.removeEventListener('pageshow', clearCredentials);
+      window.removeEventListener("pagehide", clearCredentials);
+      window.removeEventListener("pageshow", clearCredentials);
     };
   }, [portal]);
 
@@ -60,11 +68,13 @@ export function LoginForm({ portal }: { portal: LoginPortal }) {
     // Validation
     const cleanUsername = username.trim();
     if (!cleanUsername) {
-      setErrorMessage(`Please enter your ${isRadiologist ? 'radiologist' : 'staff'} username.`);
+      setErrorMessage(
+        `Please enter your ${isRadiologist ? "radiologist" : "staff"} username.`,
+      );
       return;
     }
     if (!password) {
-      setErrorMessage('Please enter your account password.');
+      setErrorMessage("Please enter your account password.");
       return;
     }
 
@@ -75,19 +85,21 @@ export function LoginForm({ portal }: { portal: LoginPortal }) {
     setShowPassword(false);
     try {
       await login(cleanUsername, password, portal, controller.signal);
-      if (controller.signal.aborted || pendingLogin.current !== controller) return;
+      if (controller.signal.aborted || pendingLogin.current !== controller)
+        return;
       // Next.js can retain this route's state after navigation.
-      setUsername('');
-      setPassword('');
+      setUsername("");
+      setPassword("");
     } catch (err: unknown) {
-      if (controller.signal.aborted || pendingLogin.current !== controller) return;
-      setPassword('');
+      if (controller.signal.aborted || pendingLogin.current !== controller)
+        return;
+      setPassword("");
       if (err instanceof ApiError) {
         setErrorMessage(err.detail);
       } else if (err instanceof Error) {
         setErrorMessage(err.message);
       } else {
-        setErrorMessage('Authentication failed. Please verify credentials.');
+        setErrorMessage("Authentication failed. Please verify credentials.");
       }
     } finally {
       if (pendingLogin.current === controller) {
@@ -99,151 +111,196 @@ export function LoginForm({ portal }: { portal: LoginPortal }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        {/* Brand Icon & Heading */}
-        <div className="flex justify-center mb-2">
-          <div className="h-12 w-12 rounded-xl bg-sky-600 flex items-center justify-center text-white shadow-md shadow-sky-100">
-            <Activity className="h-7 w-7 stroke-[2.2]" />
-          </div>
+    <main className="login-shell">
+      <section className="login-story" aria-label="About PulmoScan">
+        <Brand />
+        <svg
+          viewBox="0 0 260 300"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.1"
+          className="lung-illustration"
+          aria-hidden="true"
+        >
+          <path d="M124 22v96m12-96v96M124 103c-22-18-31-58-48-45S16 142 23 219s85 53 91 18 10-106 10-134Zm12 0c22-18 31-58 48-45s60 84 53 161-85 53-91 18-10-106-10-134Z" />
+          <path d="M124 110 74 159l-30 18m80-51-48 58-31 23m79-59-34 71-37 21m71-70-17 66M136 110l50 49 30 18m-80-51 48 58 31 23m-79-59 34 71 37 21m-71-70 17 66M75 82l-9 46m29-28-9 41m-36 52 29 7m-14 38 32-4m87-152 9 46m-29-28 9 41m36 52-29 7m14 38-32-4" />
+          <path
+            d="M9 45h28M9 45v28m242-28h-28m28 0v28M9 279h28m-28 0v-28m242 28h-28m28 0v-28"
+            strokeWidth="2"
+          />
+        </svg>
+        <div className="story-copy">
+          <p className="eyebrow">A clearer perspective</p>
+          <h2>
+            Thoughtful technology.
+            <br />
+            <em>Confident clinical review.</em>
+          </h2>
+          <p>
+            A focused workspace for chest radiograph screening, built around the
+            people who care for patients.
+          </p>
         </div>
-        <h2 className="text-center text-2xl font-bold tracking-tight text-slate-900">
-          PulmoScan
-        </h2>
-        <p className="mt-1 text-center text-xs text-slate-500 font-medium">
-          Chest Radiography AI Screening & Secure Repository
+        <div className="story-steps">
+          <span>
+            <b>01</b>Upload securely
+          </span>
+          <span>
+            <b>02</b>Screen with AI
+          </span>
+          <span>
+            <b>03</b>Review with care
+          </span>
+        </div>
+        <p className="story-footer">
+          <ShieldCheck size={14} />
+          Encrypted radiograph storage. Account-based access.
         </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
-        <div className="bg-white py-8 px-6 shadow-xs border border-slate-200 rounded-xl sm:px-10">
-          <div className="mb-6">
-            <h1 className="text-base font-semibold text-slate-900">
-              {isRadiologist ? 'Radiologist Login' : 'Staff Login'}
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {isRadiologist
-                ? 'Sign in to review and screen scans across the institution.'
-                : 'Sign in to upload and screen radiographs assigned to your account.'}
-            </p>
+      </section>
+      <section className="login-main" aria-label="Sign in">
+        <div className="login-tools">
+          <div className="login-mobile-brand">
+            <Brand />
           </div>
-
-          <nav aria-label="Login portal" className="grid grid-cols-2 gap-2 mb-6">
-            {([
-              { portal: 'staff', label: 'Staff', icon: Stethoscope },
-              { portal: 'radiologist', label: 'Radiologist', icon: ShieldCheck },
-            ] as const).map((item) => (
+          <p>
+            <span className="status-dot accent" />
+            Practitioner workspace
+          </p>
+          <ThemeToggle />
+        </div>
+        <div className="login-card">
+          <p className="eyebrow">Welcome to PulmoScan</p>
+          <h1>{isRadiologist ? "Radiologist Login" : "Staff Login"}</h1>
+          <p className="page-description">
+            {isRadiologist
+              ? "Your institutional review workspace. Sign in to explore radiographs and run AI screening."
+              : "Your clinical day, organized. Sign in to upload radiographs and follow your screening results."}
+          </p>
+          <nav aria-label="Login portal" className="portal-switch">
+            {(
+              [
+                { portal: "staff", label: "Staff", icon: Stethoscope },
+                { portal: "radiologist", label: "Radiologist", icon: Activity },
+              ] as const
+            ).map((item) => (
               <Link
                 key={item.portal}
                 href={getLoginPath(item.portal)}
-                aria-current={portal === item.portal ? 'page' : undefined}
-                className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${
-                  portal === item.portal
-                    ? 'border-sky-600 bg-sky-50 text-sky-800'
-                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
+                aria-current={portal === item.portal ? "page" : undefined}
               >
-                <item.icon className="h-4 w-4" aria-hidden="true" />
+                <item.icon size={15} aria-hidden="true" />
                 {item.label}
+                {portal === item.portal && (
+                  <Check size={13} aria-hidden="true" />
+                )}
               </Link>
             ))}
           </nav>
-
           {errorMessage && (
-            <div role="alert" id="login-error" className="mb-5 p-3.5 rounded-lg bg-rose-50 border border-rose-200 flex items-start space-x-2.5 text-rose-800 text-xs">
-              <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 mt-0.5" />
-              <span>{errorMessage}</span>
+            <div
+              role="alert"
+              id="login-error"
+              className="notice notice-error mb-5"
+            >
+              <AlertCircle size={17} className="shrink-0" />
+              <p>{errorMessage}</p>
             </div>
           )}
-
-          <form ref={formRef} autoComplete="off" onSubmit={handleSubmit} aria-busy={isLoading} aria-describedby={errorMessage ? 'login-error' : undefined} className="space-y-4">
+          <form
+            ref={formRef}
+            autoComplete="off"
+            onSubmit={handleSubmit}
+            aria-busy={isLoading}
+            aria-describedby={errorMessage ? "login-error" : undefined}
+            className="space-y-5"
+          >
             <div>
-              <label
-                htmlFor="username"
-                className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
-              >
-                {isRadiologist ? 'Radiologist Username' : 'Staff Username'}
+              <label htmlFor="username" className="field-label">
+                {isRadiologist ? "Radiologist Username" : "Staff Username"}
               </label>
-              <div className="relative rounded-md shadow-2xs">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <User className="h-4 w-4" />
-                </div>
+              <div className="field-icon">
+                <User size={16} />
                 <input
                   id="username"
                   name={`${portal}-username`}
+                  className="input"
                   type="text"
                   autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   disabled={isLoading}
                   required
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder={isRadiologist ? 'Enter your radiologist username' : 'Enter your staff username'}
-                  className="block w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-900 placeholder-slate-400"
+                  onChange={(event) => setUsername(event.target.value)}
+                  placeholder={
+                    isRadiologist
+                      ? "Enter your radiologist username"
+                      : "Enter your staff username"
+                  }
                 />
               </div>
             </div>
-
             <div>
-              <label
-                htmlFor="password"
-                className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
-              >
+              <label htmlFor="password" className="field-label">
                 Password
               </label>
-              <div className="relative rounded-md shadow-2xs">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <Lock className="h-4 w-4" />
-                </div>
+              <div className="field-icon password-field">
+                <Lock size={16} />
                 <input
                   id="password"
                   name={`${portal}-password`}
-                  type={showPassword ? 'text' : 'password'}
+                  className="input"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="off"
                   disabled={isLoading}
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(event) => setPassword(event.target.value)}
                   placeholder="Enter your password"
-                  className="block w-full pl-9 pr-10 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-900 placeholder-slate-400"
                 />
                 <button
                   type="button"
+                  className="icon-button"
                   disabled={isLoading}
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   aria-pressed={showPassword}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
-
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-xs text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+              className="button button-primary w-full mt-2"
             >
               {isLoading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                  <span>Authenticating...</span>
-                </div>
+                <>
+                  <Activity size={16} className="spin" />
+                  Authenticating...
+                </>
               ) : (
-                <span>Sign In to System</span>
+                <>
+                  Sign In to System
+                  <ArrowRight size={16} />
+                </>
               )}
             </button>
           </form>
-
+          <div className="login-security">
+            <ShieldCheck size={18} className="accent shrink-0 mt-1" />
+            <p>
+              Only your login portal and appearance preference are remembered.
+              Refreshing or reopening the app requires a new sign-in.
+            </p>
+          </div>
         </div>
-
-        {/* Security & In-Memory Session Notice */}
-        <div className="mt-4 text-center space-y-1">
-          <p className="text-[11px] text-slate-500">
-            Your preferred login portal is remembered. You will need to sign in again after refreshing or reopening the app.
-          </p>
-        </div>
-      </div>
-    </div>
+        <footer className="login-footer">
+          <span>PulmoScan / Clinical decision support</span>
+          <span>Educational prototype</span>
+        </footer>
+      </section>
+    </main>
   );
 }

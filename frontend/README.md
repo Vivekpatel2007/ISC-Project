@@ -54,7 +54,7 @@ PulmoScan is engineered with **Next.js (App Router)**, **React 19**, **TypeScrip
 - **Framework**: Next.js 16.4.3 (App Router with Turbopack)
 - **UI Library**: React 19.3.0
 - **Language**: TypeScript 5
-- **Styling**: Tailwind CSS v4 (Custom medical light theme: Slate-50, Sky-600, Teal-700)
+- **Styling**: Tailwind CSS v4 with shared semantic color tokens for light and dark appearance, responsive tables/cards, and keyboard focus states.
 - **Icons**: Lucide React
 - **Testing**: Vitest, `@testing-library/react`, `@testing-library/jest-dom`, JSDOM
 

@@ -15,6 +15,7 @@ vi.mock('next/navigation', () => ({
     push: vi.fn(),
   }),
   usePathname: () => '/scans',
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock('@/context/auth-context', () => ({
@@ -68,7 +69,7 @@ describe('ScansHistoryPage', () => {
     await waitFor(() => {
       expect(screen.getAllByText('ANON-10001')[0]).toBeInTheDocument();
       expect(screen.getAllByText('ANON-20002')[0]).toBeInTheDocument();
-      expect(screen.getAllByText('PENDING')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Pending')[0]).toBeInTheDocument();
       expect(screen.getAllByText(/PNEUMONIA/i)[0]).toBeInTheDocument();
     });
   });
@@ -99,7 +100,7 @@ describe('ScansHistoryPage', () => {
     });
 
     // Click PROCESSED status filter button
-    const processedFilterBtn = screen.getByRole('button', { name: /^PROCESSED$/i });
+    const processedFilterBtn = screen.getByRole('button', { name: /^Screened$/i });
     fireEvent.click(processedFilterBtn);
 
     expect(screen.queryByText('ANON-10001')).not.toBeInTheDocument();
@@ -112,8 +113,29 @@ describe('ScansHistoryPage', () => {
     render(<ScansHistoryPage />);
 
     await waitFor(() => {
-      expect(screen.getByText(/no matching scans found/i)).toBeInTheDocument();
+      expect(screen.getByText(/no radiographs yet/i)).toBeInTheDocument();
       expect(screen.getByText(/upload first scan/i)).toBeInTheDocument();
     });
+  });
+
+  it('paginates the records and resets to the first page when searching', async () => {
+    vi.spyOn(apiClient, 'listScans').mockResolvedValueOnce(Array.from({ length: 10 }, (_, index) => ({
+      ...mockScans[0], scan_id: `scan-${index}`, patient_id: `ANON-${String(index).padStart(4, '0')}`,
+    })));
+    render(<ScansHistoryPage />);
+    await waitFor(() => expect(screen.getByText('Page 1 of 2')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+    expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Search scans'), { target: { value: 'ANON-0000' } });
+    expect(screen.getByText('Page 1 of 1')).toBeInTheDocument();
+    expect(screen.getAllByText('ANON-0000')[0]).toBeInTheDocument();
+  });
+
+  it('shows a retryable error rather than an empty repository when loading fails', async () => {
+    vi.spyOn(apiClient, 'listScans').mockRejectedValueOnce(new Error('Connection unavailable'));
+    render(<ScansHistoryPage />);
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Connection unavailable'));
+    expect(screen.queryByText('No radiographs yet')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
 });

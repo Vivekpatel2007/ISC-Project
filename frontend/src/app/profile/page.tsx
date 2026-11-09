@@ -1,166 +1,153 @@
-'use client';
+"use client";
 
-import React from 'react';
 import {
-  Shield,
-  Stethoscope,
-  FileCheck2,
-  Lock,
+  Sun,
+  Moon,
+  Monitor,
+  ShieldCheck,
+  UploadCloud,
+  ScanLine,
   LogOut,
-} from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
-import { AuthenticatedLayout } from '@/components/layout/authenticated-layout';
+  LockKeyhole,
+} from "lucide-react";
+import { useAuth } from "@/context/auth-context";
+import { useTheme } from "@/context/theme";
+import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
+import { PageHeader } from "@/components/ui";
 
 export default function ProfilePage() {
   const { user, role, logout } = useAuth();
-
+  const { preference, setPreference } = useTheme();
+  const institution = role !== "doctor";
+  const initials = (user?.full_name || user?.username || "PS")
+    .replace(/^Dr\.?\s*/i, "")
+    .split(" ")
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
   return (
     <AuthenticatedLayout>
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
-            Staff Credentials & Access
-          </h1>
-          <p className="text-xs md:text-sm text-slate-500 mt-1">
-            Authenticated practitioner profile and cryptographically verified role permissions.
-          </p>
-        </div>
-
-        {/* Profile Card */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-6">
-          <div className="flex items-center space-x-4 pb-6 border-b border-slate-100">
-            <div className="h-16 w-16 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-2xl">
-              {user?.full_name ? user.full_name[0] : user?.username?.[0]?.toUpperCase() || 'U'}
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">
-                {user?.full_name || user?.username}
-              </h2>
-              <div className="flex items-center space-x-2 mt-1">
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase ${
-                    role === 'doctor'
-                      ? 'bg-blue-100 text-blue-800'
-                      : role === 'radiologist'
-                      ? 'bg-teal-100 text-teal-800'
-                      : 'bg-slate-100 text-slate-800'
-                  }`}
-                >
-                  {role} Role
-                </span>
-                <span className="text-xs text-slate-400">•</span>
-                <span className="text-xs text-slate-500 font-mono">@{user?.username}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Profile Fields from GET /auth/me */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
-              <span className="text-slate-400 font-medium uppercase text-[10px] tracking-wider">
-                Internal User UUID
-              </span>
-              <p className="font-mono text-slate-800 break-all">{user?.user_id || 'N/A'}</p>
-            </div>
-
-            <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
-              <span className="text-slate-400 font-medium uppercase text-[10px] tracking-wider">
-                Full Name / Title
-              </span>
-              <p className="font-semibold text-slate-800">{user?.full_name || 'Not provided'}</p>
-            </div>
-
-            <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
-              <span className="text-slate-400 font-medium uppercase text-[10px] tracking-wider">
-                Staff Username
-              </span>
-              <p className="font-mono font-medium text-slate-800">{user?.username}</p>
-            </div>
-
-            <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
-              <span className="text-slate-400 font-medium uppercase text-[10px] tracking-wider">
-                RBAC Access Level
-              </span>
-              <p className="font-semibold text-slate-800 capitalize">{role} Tier</p>
-            </div>
-          </div>
-
-          {/* Role-Specific Capabilities */}
-          <div className="pt-2">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
-              Role Authorization Capabilities (RBAC)
-            </h3>
-            <div className="space-y-2 text-xs">
-              {role === 'doctor' ? (
-                <>
-                  <div className="p-3 rounded-lg bg-blue-50/70 border border-blue-100 flex items-start space-x-2 text-blue-900">
-                    <FileCheck2 className="h-4 w-4 text-blue-700 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold">Upload & Encrypt Scans:</span>
-                      <p className="text-blue-800 text-[11px] mt-0.5">
-                        Authorized to upload patient chest radiographs with pseudonymous IDs.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-lg bg-blue-50/70 border border-blue-100 flex items-start space-x-2 text-blue-900">
-                    <Shield className="h-4 w-4 text-blue-700 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold">Owner-Restricted Scope:</span>
-                      <p className="text-blue-800 text-[11px] mt-0.5">
-                        Authorized to view and trigger DenseNet121 screening strictly on radiographs uploaded by your staff account.
-                      </p>
-                    </div>
-                  </div>
-                </>
-              ) : role === 'radiologist' ? (
-                <>
-                  <div className="p-3 rounded-lg bg-teal-50/70 border border-teal-100 flex items-start space-x-2 text-teal-900">
-                    <FileCheck2 className="h-4 w-4 text-teal-700 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold">Institutional Repository Review:</span>
-                      <p className="text-teal-800 text-[11px] mt-0.5">
-                        Diagnostic clearance to view all patient radiographs across the healthcare institution.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-lg bg-teal-50/70 border border-teal-100 flex items-start space-x-2 text-teal-900">
-                    <Stethoscope className="h-4 w-4 text-teal-700 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold">Diagnostic AI Inference:</span>
-                      <p className="text-teal-800 text-[11px] mt-0.5">
-                        Authorized to trigger DenseNet121 evaluation on any institutional scan.
-                      </p>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
-                  Standard institutional access granted.
+      <div className="page-stack">
+        <PageHeader
+          eyebrow="Make yourself at home"
+          title="Profile & preferences"
+          description="Your account, access scope, and a workspace that suits you."
+        />
+        <div className="upload-columns">
+          <section className="panel">
+            <div className="profile-cover" />
+            <div className="panel-padding">
+              <div className="avatar profile-avatar">{initials}</div>
+              <div className="flex items-start justify-between gap-3 mt-4">
+                <div>
+                  <h2>{user?.full_name || user?.username}</h2>
+                  <p className="muted text-xs mt-1">@{user?.username}</p>
                 </div>
-              )}
+                <span className="badge badge-teal capitalize">
+                  {role === "doctor" ? "Clinical staff" : role}
+                </span>
+              </div>
+              <div className="form-divider" />
+              <dl className="detail-grid">
+                <div className="detail-item">
+                  <dt>Account username</dt>
+                  <dd>{user?.username}</dd>
+                </div>
+                <div className="detail-item">
+                  <dt>Role</dt>
+                  <dd className="capitalize">{role}</dd>
+                </div>
+                <div className="detail-item">
+                  <dt>Record visibility</dt>
+                  <dd>
+                    {institution ? "Institutional scans" : "Your own uploads"}
+                  </dd>
+                </div>
+                <div className="detail-item">
+                  <dt>Account ID</dt>
+                  <dd className="font-mono text-[10px]">{user?.user_id}</dd>
+                </div>
+              </dl>
+              <div className="form-divider" />
+              <h2>Your access, explained</h2>
+              <ul className="checklist">
+                <li>
+                  <UploadCloud size={17} />
+                  <div>
+                    <strong>Upload radiographs</strong>Securely add a PNG or
+                    JPEG using a pseudonymous patient identifier.
+                  </div>
+                </li>
+                <li>
+                  <ShieldCheck size={17} />
+                  <div>
+                    <strong>
+                      {institution
+                        ? "Review institutional records"
+                        : "Review your own records"}
+                    </strong>
+                    {institution
+                      ? "Browse radiographs uploaded by practitioners across the institution."
+                      : "View only radiographs uploaded by your account."}
+                  </div>
+                </li>
+                <li>
+                  <ScanLine size={17} />
+                  <div>
+                    <strong>Run AI screening</strong>
+                    {institution
+                      ? "Screen any radiograph you are authorized to access."
+                      : "Screen your own uploads and review their AI outputs."}
+                  </div>
+                </li>
+              </ul>
             </div>
-          </div>
-
-          {/* Session Architecture Notice */}
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2">
-            <div className="flex items-center space-x-2 text-slate-900 font-semibold">
-              <Lock className="h-4 w-4 text-sky-600" />
-              <span>Session Security Architecture</span>
-            </div>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              Tokens are issued with 30-minute validity and reside strictly in volatile memory. Tokens are never persisted to localStorage or cookies. Reloading the page or closing the tab clears the session immediately.
-            </p>
-          </div>
-
-          <div className="pt-2 flex justify-end">
-            <button
-              onClick={logout}
-              className="inline-flex items-center space-x-2 px-4 py-2 bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-lg transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Sign Out of Session</span>
-            </button>
-          </div>
+          </section>
+          <aside className="space-y-5">
+            <section className="panel panel-padding">
+              <p className="eyebrow">Personalize your workspace</p>
+              <h2>Appearance</h2>
+              <p className="muted text-xs mt-2 mb-5">
+                Choose a theme, or follow your device.
+              </p>
+              <div className="flex gap-2" role="group" aria-label="Appearance">
+                {(
+                  [
+                    { value: "light", label: "Light", icon: Sun },
+                    { value: "dark", label: "Dark", icon: Moon },
+                    { value: "system", label: "System", icon: Monitor },
+                  ] as const
+                ).map(({ value, label, icon: Icon }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={preference === value}
+                    className="appearance-option"
+                    onClick={() => setPreference(value)}
+                  >
+                    <Icon size={19} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="field-help mt-4">
+                This preference is remembered on this browser.
+              </p>
+            </section>
+            <section className="panel panel-padding">
+              <LockKeyhole size={21} className="accent mb-4" />
+              <h2>Your session</h2>
+              <p className="muted text-xs mt-2 mb-5">
+                Your session stays in this tab. Refreshing the page or closing
+                the tab requires a new sign-in.
+              </p>
+              <button className="button button-danger w-full" onClick={logout}>
+                <LogOut size={15} />
+                Sign Out of Session
+              </button>
+            </section>
+          </aside>
         </div>
       </div>
     </AuthenticatedLayout>

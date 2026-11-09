@@ -66,6 +66,7 @@ graph TD
 - [API Documentation](docs/API_DOCUMENTATION.md)
 - [Secure Storage Cryptography Specification](docs/SECURE_STORAGE.md)
 - [Frontend Documentation](frontend/README.md)
+- [Frontend Appearance and UX Review](docs/FRONTEND_UX.md)
 
 ---
 
