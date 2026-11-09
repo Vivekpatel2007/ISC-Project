@@ -1,184 +1,80 @@
-"""
-Dataset Preparation & Partitioning Pipeline
-ISC Project: AI-Based Pneumonia Detection from Chest X-Ray Images
-
-Features:
-- Audits and reports duplicate image hashes before splitting.
-- Supports both:
-  1. Standard stratified split (reproducing existing baseline split).
-  2. Patient-aware grouping split (GroupShuffleSplit on patient IDs to prevent data leakage).
-- Preserves the held-out test split intact.
-- Generates split metadata and class distribution summaries.
-"""
+"""Prepare source-backed, deduplicated, candidate-group-disjoint split manifests."""
 
 import argparse
+from datetime import datetime, timezone
 import hashlib
 import json
-import re
-import shutil
-from collections import Counter, defaultdict
 from pathlib import Path
-from sklearn.model_selection import train_test_split, GroupShuffleSplit
+import sys
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from scripts.audit_dataset import audit_dataset
+from src.data_protocol import CLASSES, digest_json, filename_group, plan_splits, source_file
 
 
-def compute_md5(filepath: Path) -> str:
-    hasher = hashlib.md5()
-    with open(filepath, "rb") as f:
-        while chunk := f.read(65536):
-            hasher.update(chunk)
-    return hasher.hexdigest()
+def extract_patient_id(filename, class_name):
+    subject = filename_group(filename, class_name)
+    if subject is None:
+        raise ValueError(f'Cannot infer a candidate subject ID from {filename}')
+    return subject
 
 
-def extract_patient_id(filename: str, class_name: str) -> str:
-    stem = Path(filename).stem
-    if class_name == "PNEUMONIA":
-        parts = stem.split("_")
-        return parts[0]  # e.g. person1000
+def prepare_dataset(data_dir, output_dir, train_ratio=0.85, random_seed=42, audit_path=None, previous_audit=None):
+    data_dir, output_dir = Path(data_dir).resolve(), Path(output_dir).resolve()
+    if output_dir.exists() and any(output_dir.iterdir()):
+        raise ValueError('Output directory is not empty. Use a new experiment directory; existing manifests are preserved.')
+    audit_path = Path(audit_path) if audit_path else data_dir / 'review/dataset_audit.json'
+    if audit_path.exists():
+        audit = json.loads(audit_path.read_text(encoding='utf-8'))
+        if Path(audit['data_root']).resolve() != data_dir:
+            raise ValueError('Audit data root does not match the requested source.')
     else:
-        parts = stem.split("-")
-        if len(parts) >= 2:
-            return f"{parts[0]}-{parts[1]}"
-        return stem
-
-
-def prepare_dataset(
-    data_dir: Path,
-    output_dir: Path,
-    train_ratio: float = 0.85,
-    random_seed: int = 42,
-    patient_grouping: bool = False,
-    deduplicate: bool = False
-):
-    classes = ["NORMAL", "PNEUMONIA"]
-    print("=" * 60)
-    print("DATASET PREPARATION PIPELINE")
-    print("=" * 60)
-    print(f"Source raw data:       {data_dir.resolve()}")
-    print(f"Destination folder:    {output_dir.resolve()}")
-    print(f"Train / Val ratio:     {train_ratio:.2f} / {1.0 - train_ratio:.2f}")
-    print(f"Random seed:           {random_seed}")
-    print(f"Patient grouping:      {patient_grouping}")
-    print(f"Deduplicate images:    {deduplicate}")
-
-    # Gather images from the raw training folder
-    all_paths = []
-    all_labels = []
-    all_patient_ids = []
-    hash_to_path = {}
-    duplicates_found = []
-
-    for class_name in classes:
-        class_dir = data_dir / "train" / class_name
-        if not class_dir.exists():
-            raise FileNotFoundError(f"Training folder not found: {class_dir}")
-
-        for path in sorted(class_dir.iterdir()):
-            if path.is_file() and not path.name.startswith("."):
-                h = compute_md5(path)
-                if h in hash_to_path:
-                    duplicates_found.append((path.name, hash_to_path[h].name))
-                    if deduplicate:
-                        continue  # Skip duplicate file
-                else:
-                    hash_to_path[h] = path
-
-                all_paths.append(path)
-                all_labels.append(class_name)
-                all_patient_ids.append(extract_patient_id(path.name, class_name))
-
-    print(f"\nDiscovered {len(all_paths)} valid training source images.")
-    if duplicates_found:
-        print(f"  Identified {len(duplicates_found)} duplicate image pairs.")
-        if deduplicate:
-            print(f"  Removed duplicates from training candidate pool.")
-
-    # Perform Split
-    if patient_grouping:
-        print("\nApplying GroupShuffleSplit by Patient ID...")
-        gss = GroupShuffleSplit(n_splits=1, train_size=train_ratio, random_state=random_seed)
-        train_idx, val_idx = next(gss.split(all_paths, all_labels, groups=all_patient_ids))
-        train_paths = [all_paths[i] for i in train_idx]
-        train_labels = [all_labels[i] for i in train_idx]
-        val_paths = [all_paths[i] for i in val_idx]
-        val_labels = [all_labels[i] for i in val_idx]
-    else:
-        print("\nApplying standard Stratified split...")
-        train_paths, val_paths, train_labels, val_labels = train_test_split(
-            all_paths,
-            all_labels,
-            train_size=train_ratio,
-            random_state=random_seed,
-            stratify=all_labels
-        )
-
-    # Check patient overlap
-    tr_pids = set(extract_patient_id(p.name, l) for p, l in zip(train_paths, train_labels))
-    va_pids = set(extract_patient_id(p.name, l) for p, l in zip(val_paths, val_labels))
-    overlap = tr_pids & va_pids
-    print(f"Patient overlap between train and val: {len(overlap)} patients.")
-
-    # Copy files into output directory
-    for split, paths, labels in [("train", train_paths, train_labels), ("val", val_paths, val_labels)]:
-        for class_name in classes:
-            folder = output_dir / split / class_name
-            folder.mkdir(parents=True, exist_ok=True)
-
-        for path, label in zip(paths, labels):
-            dest = output_dir / split / label / path.name
-            if not dest.exists():
-                shutil.copy2(path, dest)
-
-    # Keep original test set untouched
-    for class_name in classes:
-        source = data_dir / "test" / class_name
-        dest = output_dir / "test" / class_name
-        if not source.exists():
-            raise FileNotFoundError(f"Test folder not found: {source}")
-        dest.mkdir(parents=True, exist_ok=True)
-        for path in source.iterdir():
-            if path.is_file() and not path.name.startswith("."):
-                target = dest / path.name
-                if not target.exists():
-                    shutil.copy2(path, target)
-
-    # Print summary and save metadata
-    summary = {"splits": {}}
-    print("\nDataset Partition Summary:")
-    for split in ["train", "val", "test"]:
-        summary["splits"][split] = {}
-        print(f"\n--- {split.upper()} ---")
-        for class_name in classes:
-            folder = output_dir / split / class_name
-            count = sum(1 for p in folder.iterdir() if p.is_file())
-            summary["splits"][split][class_name] = count
-            print(f"  {class_name}: {count}")
-
-    summary_file = output_dir / "dataset_summary.json"
-    with open(summary_file, "w", encoding="utf-8") as f:
-        json.dump(summary, f, indent=2)
-
-    print(f"\nDataset preparation finished. Metadata saved to {summary_file}")
+        audit = audit_dataset(data_dir, progress=lambda text: print(text, flush=True))
+    actual = {path.relative_to(data_dir).as_posix()
+              for split in ('train', 'val', 'test') for label in CLASSES
+              for path in (data_dir / split / label).rglob('*') if path.is_file() and not path.name.startswith('.')}
+    if actual != {row['path'] for row in audit['images']}:
+        raise ValueError('Source file list differs from the audit. Rerun scripts/audit_dataset.py.')
+    for index, row in enumerate(audit['images']):
+        if hashlib.sha256(source_file(data_dir, row['path']).read_bytes()).hexdigest() != row['sha256']:
+            raise ValueError(f"Source image changed since audit: {row['path']}")
+        if (index + 1) % 1000 == 0:
+            print(f'Verified {index + 1} audited source files ...', flush=True)
+    changes = []
+    if previous_audit:
+        previous = json.loads(Path(previous_audit).read_text(encoding='utf-8'))
+        old = {row['path']: row for row in previous['images']}
+        changes = [dict(path=row['path'], previous_sha256=old[row['path']]['sha256'], sha256=row['sha256'])
+                   for row in audit['images'] if row['path'] in old and row['sha256'] != old[row['path']]['sha256']]
+    plan = plan_splits(audit, train_ratio, random_seed, [row['path'] for row in changes])
+    root = data_dir.relative_to(ROOT).as_posix() if data_dir.is_relative_to(ROOT) else str(data_dir)
+    manifest = dict(schema_version=1, source_root=root, created_at=datetime.now(timezone.utc).isoformat(),
+                    source_audit_sha256=audit['manifest_sha256'], changed_sources=changes, **plan)
+    manifest['manifest_sha256'] = digest_json(manifest)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    destination = output_dir / 'manifest.json'
+    with destination.open('x', encoding='utf-8') as handle:
+        json.dump(manifest, handle, indent=2)
+    print(json.dumps({key: plan[key] for key in ('counts', 'exclusions', 'raw_test_images', 'caveat')}, indent=2))
+    print(f'Split manifest: {destination}\nSHA-256: {manifest["manifest_sha256"]}')
+    print('No images were moved, copied, edited, or used for training.')
+    return manifest
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Prepare and partition chest X-ray dataset")
-    parser.add_argument("--data_dir", type=str, default="data/chest_xray", help="Raw dataset directory")
-    parser.add_argument("--output_dir", type=str, default="data/model_data", help="Output directory")
-    parser.add_argument("--train_ratio", type=float, default=0.85, help="Train ratio (default 0.85)")
-    parser.add_argument("--random_seed", type=int, default=42, help="Random seed")
-    parser.add_argument("--patient_grouping", action="store_true", help="Group by patient ID to avoid leakage")
-    parser.add_argument("--deduplicate", action="store_true", help="Remove duplicate images from training pool")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--data-dir', '--data_dir', type=Path, default=Path('data'))
+    parser.add_argument('--output-dir', '--output_dir', type=Path, default=Path('data/prepared/screening-v1'))
+    parser.add_argument('--train-ratio', '--train_ratio', type=float, default=0.85)
+    parser.add_argument('--seed', '--random_seed', type=int, default=42)
+    parser.add_argument('--audit', type=Path)
+    parser.add_argument('--previous-audit', type=Path, help='Quarantine candidate components whose files changed since this audit.')
+    parser.add_argument('--patient_grouping', action='store_true', help='Compatibility flag: grouping is always enabled.')
+    parser.add_argument('--deduplicate', action='store_true', help='Compatibility flag: exact-pixel deduplication is always enabled.')
     args = parser.parse_args()
-
-    prepare_dataset(
-        data_dir=Path(args.data_dir),
-        output_dir=Path(args.output_dir),
-        train_ratio=args.train_ratio,
-        random_seed=args.random_seed,
-        patient_grouping=args.patient_grouping,
-        deduplicate=args.deduplicate
-    )
+    prepare_dataset(args.data_dir, args.output_dir, args.train_ratio, args.seed, args.audit, args.previous_audit)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

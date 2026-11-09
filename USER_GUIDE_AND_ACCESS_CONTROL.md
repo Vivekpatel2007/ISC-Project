@@ -1082,6 +1082,8 @@ The helper explicitly installs `requirements.txt` after selecting the pinned tor
 
 The teammate's report names the Kermany/Paul Mooney Kaggle chest X-ray dataset. Follow [docs/DATASET_SETUP.md](docs/DATASET_SETUP.md) for the download link and extraction layout. The dataset is optional for running the app and automated backend tests, and required for meaningful model evaluation or retraining.
 
+The new [manual training workflow](docs/TRAINING.md) uses audited source-backed manifests, aspect-preserving preprocessing, and separate candidate outputs. Run `.\.venv\Scripts\python.exe -u scripts/train_models.py` in your own terminal after reading that guide to see live logs. Training never starts as part of `npm.cmd run dev`, and candidates are not automatically deployed.
+
 #### Step 3: Install Turborepo and frontend dependencies
 
 ```powershell

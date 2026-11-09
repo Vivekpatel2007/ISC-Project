@@ -2,7 +2,7 @@
 
 ## Which dataset this repository refers to
 
-The [teammate's evaluation report](../results/model_evaluation_report.md) identifies **Pediatric Chest X-Ray Images (Pneumonia), Kaggle / Kermany et al.** Its example filenames and the preparation script match the expected two-class Kaggle layout.
+The project uses **Pediatric Chest X-Ray Images (Pneumonia), Kaggle / Kermany et al.** The downloaded image filenames and folders match the expected two-class Kaggle layout. The teammate's generated evaluation report was removed during the old-results cleanup; the current preparation protocol is documented in [the training guide](TRAINING.md).
 
 Download [Chest X-Ray Images (Pneumonia), published by Paul Mooney on Kaggle](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia). Use the dataset page's download action; Kaggle may request sign-in. No Kaggle Python package or API token is needed for a browser download. Keep the downloaded archive name/version and download date for your experiment records.
 
@@ -69,25 +69,17 @@ Do not replace the project's live checkpoint simply to check the download. The d
 
 ## Raw images versus prepared training data
 
-The current training configuration expects a **prepared** dataset at `data/model_data/`, also with `train`, `val`, and `test` folders containing the two class folders. Extracting to `data/chest_xray/` alone does not populate it.
+The current training workflow uses `data/prepared/screening-v1/manifest.json`, already prepared for this download. It points to raw image files directly, with **4,035 train / 712 validation / 618 test images**. The [training guide](TRAINING.md) explains exclusions, changed-file findings, preprocessing, and the manual command to start training.
 
-The [backend review](BACKEND_REVIEW.md) records the measured dataset/model baseline and a bug in the legacy `NORMAL2-IM-*` grouping logic. Review that before running preparation. No training or split changes are part of the review step.
+`src/prepare_dataset.py` now creates immutable split manifests rather than copying images into ImageFolder directories. It corrects normal-ID parsing, connects candidate subject IDs and exact-pixel duplicates, reserves test-connected components, deduplicates each evaluation/training pool, and makes a class-balanced train/validation split from eligible raw train/validation images. It refuses nonempty output directories and records source hashes and exclusions. The older `data/model_data` workflow and nested `configs/train_config.json` are historical; use `configs/train_local.json` for the new runner.
 
-The existing `src/prepare_dataset.py` builds training and validation subsets from the **raw train folder**, defaulting to 85% / 15% with seed 42. It copies the raw test set and does not incorporate the bundled raw validation folder. It supports patient grouping and exact-file deduplication of the training candidate pool.
+For a new reviewed source version, create a fresh audit and a new manifest directory as documented in the training guide. Do not rerun preparation to start the already prepared local experiment.
 
-For a later reviewed experiment, an example preparation command is:
-
-```powershell
-.\.venv\Scripts\python.exe src/prepare_dataset.py --data_dir data/chest_xray --output_dir data/model_data_patient_split --patient_grouping --deduplicate
-```
-
-This copies images and writes a dataset summary; it does not train. Use a new, empty destination per experiment. The current script skips already present filenames rather than cleaning the destination, so reusing an old prepared directory can retain stale images. Point a separate experiment configuration's `data.data_dir` at the new prepared folder before any later training.
-
-**These options are not a guarantee of a leak-free dataset.** Patient IDs are inferred heuristically from filenames; complete authoritative patient metadata is not supplied by this project. Deduplication in the preparation script covers the raw training pool, not an independent audit of all training/validation/test boundaries. Identical images, patient overlap, and conflicting labels still need review across all splits.
+**Candidate-ID separation is not proof of patient independence.** Filename conventions are heuristic; authoritative patient metadata and near-duplicate review are still needed. The new prepared test set omits six exact-pixel duplicates from the original 624-image test set, so future results must identify that changed protocol.
 
 ## What to review before retraining
 
-The existing evaluation report and files under `results/diagnostics/` describe patient overlap and exact duplicates in an earlier validation split. Treat those as recorded findings to reproduce, not as verified facts about a newly downloaded archive. In particular:
+The [historical backend review](BACKEND_REVIEW.md) records the earlier overlap findings. Old generated files under `results/` have been removed; use the current integrity audits and split manifest for new experiments. In particular:
 
 - Audit image hashes and patient identifiers across all splits, including the copied test set.
 - Keep the test set out of training, threshold selection, hyperparameter selection, and repeated model selection.

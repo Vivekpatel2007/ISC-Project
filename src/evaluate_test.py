@@ -54,7 +54,9 @@ def evaluate_test(model_path: Path, data_dir: Path, threshold_path: Path, result
     print(f"Model:          {model_path.resolve()}")
     print(f"Test directory: {data_dir.resolve() / 'test'}")
 
-    checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+    checkpoint = torch.load(model_path, map_location="cpu", weights_only=True)
+    if 'manifest_sha256' in checkpoint:
+        raise ValueError('Use scripts/evaluate_experiment.py for manifest-based candidates and their recorded preprocessing/splits.')
     class_names = checkpoint.get("class_names", ["NORMAL", "PNEUMONIA"])
     image_size = checkpoint.get("image_size", 224)
     norm = checkpoint.get("normalization", {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]})

@@ -67,6 +67,8 @@ If this returns `False`, obtain the trained checkpoint from the project owner an
 
 For the dataset download and exact raw/prepared folder layouts, use [the dataset setup guide](DATASET_SETUP.md). Downloading training images is separate from installing Python packages.
 
+For manual model training after preparation, use [the training guide](TRAINING.md). Its runner keeps candidate checkpoints and logs under ignored `data/experiments/` and does not change the running app's model automatically.
+
 ## 5. Verify setup without starting servers
 
 ```powershell

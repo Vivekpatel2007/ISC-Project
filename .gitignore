@@ -32,6 +32,10 @@ secure_data/
 # Downloaded datasets, archives, and prepared image copies
 /data/
 
+# Legacy generated results; active experiments live under data/experiments/
+/results/*
+!/results/README.md
+
 # IDE & OS files
 .vscode/
 .idea/

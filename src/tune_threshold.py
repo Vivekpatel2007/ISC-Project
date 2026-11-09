@@ -48,7 +48,9 @@ def tune_threshold(model_path: Path, data_dir: Path, results_dir: Path, criterio
     print(f"Validation data: {data_dir.resolve() / 'val'}")
     print(f"Selection criteria: {criterion_name}")
 
-    checkpoint = torch.load(model_path, map_location=device, weights_only=False)
+    checkpoint = torch.load(model_path, map_location="cpu", weights_only=True)
+    if 'manifest_sha256' in checkpoint:
+        raise ValueError('Experiment candidates are threshold-tuned on their recorded validation set by scripts/train_models.py.')
     class_names = checkpoint.get("class_names", ["NORMAL", "PNEUMONIA"])
     image_size = checkpoint.get("image_size", 224)
     norm = checkpoint.get("normalization", {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]})

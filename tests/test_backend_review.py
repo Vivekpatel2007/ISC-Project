@@ -65,6 +65,7 @@ def test_audit_reports_missing_classes_and_corrupt_images(tmp_path):
     ({'threshold': 1.1}, 'threshold'),
     ({'normalization': {'mean': [0, 0, 0], 'std': [1, 0, 1]}}, 'normalization'),
     ({'image_size': -224}, 'image_size'),
+    ({'preprocessing': {'resize_mode': 'unknown'}}, 'preprocessing'),
 ])
 def test_invalid_checkpoint_metadata_is_rejected_before_model_construction(tmp_path, monkeypatch, metadata, message):
     from src.api import model_service

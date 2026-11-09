@@ -38,7 +38,7 @@ Leave `PULMOSCAN_DEVICE=auto` in `.env` for GPU preference with CPU fallback. Se
 
 On the GTX 1650 laptop, the CUDA 12.4 profile has been installed and the real checkpoint has completed offline predictions on both `cuda:0` and forced CPU. Other GPU profiles are covered by simulated selection tests; they have not all been physically tested. In containers or virtual machines, the GPU must also be exposed to that environment.
 
-**Training is separate:** 16 GB system RAM is a starting point, with 32 GB more comfortable. A 4 GB GPU may need a small batch such as 2; the existing batch size 16 is not guaranteed to fit. Around 8–12 GB VRAM gives more room. CPU training is supported but slower. Add dataset and checkpoint storage beyond the allowances above. Starting the web app never trains or modifies model weights.
+**Training is separate:** 16 GB system RAM is a starting point, with 32 GB more comfortable. The local profile uses batch 2 with accumulation 8 for a 4 GB GPU; larger physical batches are not guaranteed to fit. Around 8–12 GB VRAM gives more room. CPU training is supported but slower. Add dataset and checkpoint storage beyond the allowances above. Starting the web app never trains or modifies model weights.
 
 ---
 
@@ -100,6 +100,7 @@ graph TD
 - [How the Model Works, CPU/GPU Selection & Hardware Requirements](docs/MODEL_AND_HARDWARE.md)
 - [Dataset Download, Folder Layout & Training Preparation](docs/DATASET_SETUP.md)
 - [Backend Review and Measured Model Baseline](docs/BACKEND_REVIEW.md)
+- [Manual Training, Preprocessing, Logs & Resume](docs/TRAINING.md)
 - [Complete User Guide, Page Map & RBAC Guide](USER_GUIDE_AND_ACCESS_CONTROL.md)
 - [Security Audit Report](docs/SECURITY_AUDIT.md)
 - [End-to-End Testing Report](docs/END_TO_END_TESTING.md)
@@ -200,7 +201,7 @@ The full backend suite remains available via `.\.venv\Scripts\python.exe -m pyte
 
 ## Dataset for Training and Evaluation
 
-The teammate's [model evaluation report](results/model_evaluation_report.md) identifies **Kermany et al., Chest X-Ray Images (Pneumonia), from Kaggle**. Download the [Chest X-Ray Images (Pneumonia) dataset by Paul Mooney](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia), then extract the folder containing `train`, `val`, and `test` to `data/chest_xray/`. Each split should contain `NORMAL/` and `PNEUMONIA/`. The related [original Kermany dataset record](https://data.mendeley.com/datasets/rscbjbr9sj/2) includes both OCT and chest X-ray data; this project needs the chest X-rays.
+This project uses **Kermany et al., Chest X-Ray Images (Pneumonia), from Kaggle**. Download the [Chest X-Ray Images (Pneumonia) dataset by Paul Mooney](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia), then extract the folder containing `train`, `val`, and `test` to `data/chest_xray/`. Each split should contain `NORMAL/` and `PNEUMONIA/`. The related [original Kermany dataset record](https://data.mendeley.com/datasets/rscbjbr9sj/2) includes both OCT and chest X-ray data; this project needs the chest X-rays.
 
 The images are not included in this repository. Downloading them does not retrain the model. The app and automated backend tests can use the saved checkpoint without the training dataset. Check the [dataset setup guide](docs/DATASET_SETUP.md) for the exact folder tree, a read-only image check, split limitations, and what to obtain from your teammate to reproduce the previous experiment. The entire `data/` directory is ignored by Git.
 
@@ -211,9 +212,41 @@ The current local download is directly under `data/train`, `data/val`, and `data
 .\.venv\Scripts\python.exe scripts/evaluate_backend.py --data-dir data
 ```
 
-These commands do not start servers or train. They write ignored reports under `data/review/`. The [backend review](docs/BACKEND_REVIEW.md) records 5,856 readable images and a fixed-checkpoint baseline of **84.94% accuracy / 80.00% balanced accuracy**, including **93 false positives among 234 normal images**. Patient independence remains unverified; these are dataset results, not clinical accuracy guarantees. The review also documents outstanding input-suitability, multipart-spooling, and dependency-security limitations before deployment.
+These commands do not start servers or train. They write ignored reports under `data/review/`. The [backend review](docs/BACKEND_REVIEW.md) records the historical findings and outstanding input-suitability, multipart-spooling, and dependency-security limitations. Old generated results and the local baseline prediction JSON have been removed. Dataset integrity audits and prepared manifests remain; new model training results are written only under `data/experiments/<timestamp>/`.
 
-The existing report documents patient overlap and duplicate leakage in an earlier validation split. Before new training, audit the splits rather than treating the previous metrics or a new random split as independently validated accuracy.
+The historical review documents patient overlap and duplicate leakage concerns. Before new training, audit the splits rather than treating previous metrics or a random split as independently validated accuracy.
+
+---
+
+## Train Manually in Your Terminal
+
+**Current laptop status:** another source-image checksum failure occurred during epoch 3. Its cause has not been diagnosed. Local training correctly stops on this failure; do not change hashes or silently skip images. The local runner remains available for a verified dataset on a reliable machine. To move this training to Kaggle, use the standalone notebook below.
+
+The current prepared manifest contains **4,035 training / 712 validation / 618 test images**. It uses the existing source images without creating another dataset copy, excludes suspect and test-connected candidate groups, and deduplicates decoded pixels. Four unexpectedly changed source files and their connected groups were excluded; image hashes are checked during training. See the [training guide](docs/TRAINING.md) for the integrity findings and exact split policy.
+
+Stop the backend first if it is running, then run from the project root:
+
+```powershell
+.\.venv\Scripts\python.exe -u scripts/train_models.py
+```
+
+This trains **DenseNet121, then EfficientNet-B0**, with live batch/epoch logs and separate saved artifacts under `data/experiments/<timestamp>/`. Defaults target the GTX 1650: 224px images, physical batch 2, gradient accumulation 8, mixed precision on CUDA, classifier warm-up, frozen batch-normalization statistics, and up to 25 epochs per candidate with early stopping. Preprocessing preserves aspect ratio with letterboxing and uses mild training-only augmentation.
+
+Checkpoint/model selection and threshold tuning use validation data. Test evaluation is a separate explicit step after reviewing the candidates. The runner never replaces the app's checkpoint automatically; actual accuracy must be measured after training. [configs/train_local.json](configs/train_local.json) contains the active settings; `configs/train_config.json` records the older experiment format.
+
+To check hashes and pretrained-model forward passes **without training**:
+
+```powershell
+.\.venv\Scripts\python.exe -u scripts/train_models.py --check
+```
+
+The [training guide](docs/TRAINING.md) includes log locations, resume commands, smaller-batch settings, final evaluation, and rebuilding preparation for a new dataset version. The pretrained forward checks have passed on the local GTX 1650. They do not establish full training memory use or predictive accuracy.
+
+## Train on Kaggle
+
+Import **[kaggle/PulmoScan_Training.ipynb](kaggle/PulmoScan_Training.ipynb)** into a Kaggle notebook, attach the [Chest X-Ray Images (Pneumonia) dataset](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia), select an available GPU, and enable Internet. The notebook embeds the shared training code, so no project ZIP, local dataset, `.env`, or repository credentials are needed. It audits Kaggle's input directly, trains both candidates, displays validation results, and creates a model ZIP with checksums. Final test evaluation is an explicit optional step after validation review.
+
+Follow **[kaggle/README.md](kaggle/README.md)** for exact setup, settings, resume, saving notebook outputs, and downloading/importing the trained candidates. Local GPU/CPU training stays available with its smaller-batch profile. Importing downloaded results never replaces the live app model automatically.
 
 ---
 

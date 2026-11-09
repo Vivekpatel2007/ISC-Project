@@ -8,19 +8,15 @@ import io
 from itertools import combinations
 import json
 from pathlib import Path
-import re
+import sys
 
 from PIL import Image
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from src.data_protocol import filename_group
+
 SPLITS = ('train', 'val', 'test')
 CLASSES = ('NORMAL', 'PNEUMONIA')
-
-
-def filename_group(filename, label):
-    """Candidate subject ID only; filename conventions are not authoritative metadata."""
-    pattern = r'^(person\d+)(?:_|$)' if label == 'PNEUMONIA' else r'^(NORMAL2-IM-\d+|IM-\d+)(?:-|$)'
-    match = re.match(pattern, Path(filename).stem, re.IGNORECASE)
-    return match.group(1).upper() if match else None
 
 
 def audit_dataset(root, progress=print):

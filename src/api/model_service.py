@@ -28,8 +28,9 @@ import numpy as np
 from PIL import Image
 import torch
 import torch.nn as nn
-from torchvision import models, transforms
+from torchvision import models
 from src.compute import device_preference, select_device
+from src.modeling import image_transforms
 
 from src.api.config import (
     ALLOWED_IMAGE_FORMATS,
@@ -105,6 +106,9 @@ class DenseNetInferenceEngine:
         if not valid_norm:
             raise ModelInferenceError("Checkpoint normalization requires three finite means and positive standard deviations.")
         self.threshold = validate_threshold(ckpt.get("threshold", 0.40))
+        self.preprocessing = ckpt.get("preprocessing", {"resize_mode": "stretch"})
+        if not isinstance(self.preprocessing, dict) or self.preprocessing.get("resize_mode") not in {"stretch", "letterbox"}:
+            raise ModelInferenceError("Checkpoint preprocessing resize_mode must be stretch or letterbox.")
         self.best_epoch = ckpt.get("best_epoch", 5)
 
         # Reconstruct DenseNet121 architecture matching training pipeline
@@ -136,12 +140,7 @@ class DenseNetInferenceEngine:
         self.model = model
 
         # Standardized eval transformation
-        self.transform = transforms.Compose([
-            transforms.Grayscale(num_output_channels=3),
-            transforms.Resize((self.image_size, self.image_size)),
-            transforms.ToTensor(),
-            transforms.Normalize(self.norm["mean"], self.norm["std"]),
-        ])
+        self.transform = image_transforms(self.image_size, self.norm, self.preprocessing["resize_mode"])
 
     def validate_and_decode_image(self, image_bytes: bytes) -> Image.Image:
         """
@@ -216,7 +215,7 @@ class DenseNetInferenceEngine:
             "confidence": round(confidence, 4),
             "pneumonia_probability": round(prob_pneumonia, 4),
             "normal_probability": round(prob_normal, 4),
-            "threshold_applied": round(threshold, 2),
+            "threshold_applied": round(threshold, 8),
             "model_architecture": "densenet121",
             "model_epoch": self.best_epoch,
             "device": str(self.device),

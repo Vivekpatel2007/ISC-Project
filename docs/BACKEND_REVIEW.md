@@ -1,5 +1,9 @@
 # Backend and model review — 9 November 2026
 
+Follow-up: [the manual training workflow](TRAINING.md) now fixes the preparation/parser issues described below and uses source-backed audited manifests with separate experiment outputs. This document preserves the earlier 624-image baseline and findings; no new model has been trained or promoted by the assistant.
+
+Cleanup note: historical generated files under `results/` and `data/review/model_baseline.json` were removed at the user's request. Metrics below are historical review snapshots, not results of the new training workflow. Integrity audits, prepared manifests, and the app checkpoint were preserved. The reproduction commands near the end intentionally recreate historical review reports if explicitly run; use the training guide for new experiments.
+
 ## Result
 
 The request/authentication/encrypted-storage/inference path is a working local prototype. It is **not ready to describe as the best model or as independently validated clinical software**. The provided checkpoint has a high false-positive rate on the downloaded test set, patient independence remains unverified, and several training/security issues need work before the next experiment or deployment.
