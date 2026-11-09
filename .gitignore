@@ -29,11 +29,8 @@ secrets/
 # Secure Medical Storage (Contains encrypted patient scans & local metadata DB)
 secure_data/
 
-# Downloaded datasets and local prepared copies (keep code/configuration in Git)
-/data/chest_xray/
-/data/model_data*/
-/data/downloads/
-/data/*.zip
+# Downloaded datasets, archives, and prepared image copies
+/data/
 
 # IDE & OS files
 .vscode/

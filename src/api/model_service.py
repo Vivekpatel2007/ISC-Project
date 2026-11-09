@@ -19,7 +19,9 @@ Features:
 
 import io
 import logging
+import math
 from pathlib import Path
+from threading import Lock
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
@@ -53,8 +55,18 @@ class ModelInferenceError(Exception):
 
 
 class InvalidImagePayloadError(ModelInferenceError):
-    """Raised when input bytes fail image validation or are not a valid radiograph."""
+    """Raised for invalid image files; this does not verify chest X-ray suitability."""
     pass
+
+
+def validate_threshold(value):
+    try:
+        threshold = float(value)
+    except (TypeError, ValueError):
+        raise ModelInferenceError("Decision threshold must be a finite number between 0 and 1.") from None
+    if isinstance(value, bool) or not math.isfinite(threshold) or not 0 <= threshold <= 1:
+        raise ModelInferenceError("Decision threshold must be a finite number between 0 and 1.")
+    return threshold
 
 
 class DenseNetInferenceEngine:
@@ -64,17 +76,35 @@ class DenseNetInferenceEngine:
             raise FileNotFoundError(f"Model checkpoint not found at: {self.checkpoint_path.resolve()}")
 
         self.device = select_device()
+        self._prediction_lock = Lock()
         self._load_model()
 
     def _load_model(self) -> None:
         """Load weights, architecture, and inference metadata from checkpoint."""
-        ckpt = torch.load(self.checkpoint_path, map_location="cpu", weights_only=False)
+        ckpt = torch.load(self.checkpoint_path, map_location="cpu", weights_only=True)
+
+        if not isinstance(ckpt, dict) or not isinstance(ckpt.get("model_state_dict"), dict):
+            raise ModelInferenceError("Checkpoint must contain model_state_dict.")
+        if ckpt.get("architecture", "densenet121") != "densenet121":
+            raise ModelInferenceError("Checkpoint architecture must be densenet121.")
 
         self.class_names = ckpt.get("class_names", ["NORMAL", "PNEUMONIA"])
         self.class_to_idx = ckpt.get("class_to_idx", {"NORMAL": 0, "PNEUMONIA": 1})
+        if self.class_names != ["NORMAL", "PNEUMONIA"] or self.class_to_idx != {"NORMAL": 0, "PNEUMONIA": 1}:
+            raise ModelInferenceError("Checkpoint class order must be NORMAL=0, PNEUMONIA=1.")
         self.image_size = ckpt.get("image_size", 224)
+        if type(self.image_size) is not int or not MIN_IMAGE_DIMENSION <= self.image_size <= MAX_IMAGE_DIMENSION:
+            raise ModelInferenceError("Checkpoint image_size is outside the supported image dimensions.")
         self.norm = ckpt.get("normalization", {"mean": [0.485, 0.456, 0.406], "std": [0.229, 0.224, 0.225]})
-        self.threshold = float(ckpt.get("threshold", 0.40))
+        try:
+            mean, std = self.norm["mean"], self.norm["std"]
+            valid_norm = len(mean) == len(std) == 3 and all(math.isfinite(float(value)) for value in [*mean, *std])
+            valid_norm = valid_norm and all(float(value) > 0 for value in std)
+        except (TypeError, ValueError, KeyError):
+            valid_norm = False
+        if not valid_norm:
+            raise ModelInferenceError("Checkpoint normalization requires three finite means and positive standard deviations.")
+        self.threshold = validate_threshold(ckpt.get("threshold", 0.40))
         self.best_epoch = ckpt.get("best_epoch", 5)
 
         # Reconstruct DenseNet121 architecture matching training pipeline
@@ -124,35 +154,31 @@ class DenseNetInferenceEngine:
             raise InvalidImagePayloadError("Invalid image payload: payload is empty or too short.")
 
         try:
-            pil_img = Image.open(io.BytesIO(image_bytes))
-            # Force verification of internal image integrity
-            pil_img.verify()
-
-            # Reopen because verify() consumes file pointer in PIL
-            pil_img = Image.open(io.BytesIO(image_bytes))
+            with Image.open(io.BytesIO(image_bytes)) as pil_img:
+                detected_format = pil_img.format
+                if detected_format not in ALLOWED_IMAGE_FORMATS:
+                    raise InvalidImagePayloadError(
+                        f"Unsupported image format: '{detected_format}'. Allowed formats: {ALLOWED_IMAGE_FORMATS}"
+                    )
+                w, h = pil_img.size
+                if w < MIN_IMAGE_DIMENSION or h < MIN_IMAGE_DIMENSION:
+                    raise InvalidImagePayloadError(
+                        f"Image dimensions ({w}x{h}) are too small. Minimum is {MIN_IMAGE_DIMENSION}px."
+                    )
+                if w > MAX_IMAGE_DIMENSION or h > MAX_IMAGE_DIMENSION:
+                    raise InvalidImagePayloadError(
+                        f"Image dimensions ({w}x{h}) exceed maximum permitted size ({MAX_IMAGE_DIMENSION}px)."
+                    )
+                pil_img.verify()
+            with Image.open(io.BytesIO(image_bytes)) as pil_img:
+                pil_img.load()
+                return pil_img.convert("RGB")
+        except InvalidImagePayloadError:
+            raise
         except Image.DecompressionBombError:
             raise InvalidImagePayloadError("Image decompression bomb detected: pixel count exceeds maximum safe limit.") from None
         except Exception as e:
             raise InvalidImagePayloadError(f"Malformed or unreadable image file: {type(e).__name__}") from None
-
-        # Verify genuine image format (from headers, not extension or MIME)
-        detected_format = pil_img.format
-        if detected_format not in ALLOWED_IMAGE_FORMATS:
-            raise InvalidImagePayloadError(
-                f"Unsupported image format: '{detected_format}'. Allowed formats: {ALLOWED_IMAGE_FORMATS}"
-            )
-
-        w, h = pil_img.size
-        if w < MIN_IMAGE_DIMENSION or h < MIN_IMAGE_DIMENSION:
-            raise InvalidImagePayloadError(
-                f"Image dimensions ({w}x{h}) are too small for diagnostic analysis. Minimum is {MIN_IMAGE_DIMENSION}px."
-            )
-        if w > MAX_IMAGE_DIMENSION or h > MAX_IMAGE_DIMENSION:
-            raise InvalidImagePayloadError(
-                f"Image dimensions ({w}x{h}) exceed maximum permitted size ({MAX_IMAGE_DIMENSION}px)."
-            )
-
-        return pil_img.convert("RGB")
 
     def predict(
         self,
@@ -165,14 +191,17 @@ class DenseNetInferenceEngine:
         Returns:
             Dictionary with prediction class, confidence scores, threshold, and clinical disclaimer.
         """
+        threshold = validate_threshold(custom_threshold if custom_threshold is not None else self.threshold)
         pil_img = self.validate_and_decode_image(image_bytes)
-        input_tensor = self.transform(pil_img).unsqueeze(0).to(self.device)
+        input_tensor = self.transform(pil_img).unsqueeze(0)
 
-        threshold = custom_threshold if custom_threshold is not None else self.threshold
-
-        with torch.no_grad():
+        # Bound activation/workspace memory when API worker threads share this model.
+        with self._prediction_lock, torch.no_grad():
+            input_tensor = input_tensor.to(self.device)
             with torch.autocast(device_type=self.device.type, dtype=torch.float16, enabled=(self.device.type == "cuda")):
                 logits = self.model(input_tensor)
+            if logits.shape != (1, 2) or not bool(torch.isfinite(logits).all()):
+                raise ModelInferenceError("Model returned invalid or non-finite class scores.")
             probs = torch.softmax(logits.float(), dim=1).squeeze().cpu().numpy()
 
         # Class 0: NORMAL, Class 1: PNEUMONIA

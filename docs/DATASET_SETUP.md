@@ -49,23 +49,29 @@ Pneumonia-Detection/
 
 Some archives contain nested copies of the dataset folder. The required path is `data/chest_xray/train/NORMAL`, not `data/chest_xray/chest_xray/train/NORMAL`. Keep archive metadata folders such as `__MACOSX` outside the class directories. Preserve original image filenames because the existing grouping code uses them.
 
-Allow several GB beyond the software allowance for the downloaded archive, extracted images, and a second prepared copy. Downloaded images in `data/chest_xray/`, prepared copies in `data/model_data*/`, and archives in `data/downloads/` or `data/*.zip` are ignored by Git. The images are not bundled or automatically downloaded by this repository.
+The current local download instead places `train/`, `val/`, and `test/` **directly under `data/`**. This layout is valid for the new audit/evaluation tools; there is no need to move or duplicate the images. Pass `--data-dir data` as shown below. The legacy scripts with defaults pointing to `data/chest_xray` or `data/model_data` need explicit paths or a separate experiment configuration before later use.
+
+Allow several GB beyond the software allowance for the downloaded archive, extracted images, and a second prepared copy. The **entire `data/` directory is ignored by Git**, including the current raw images, prepared datasets, archives, and local review reports. The images are not bundled or automatically downloaded by this repository.
 
 ## Check the download without starting services
 
 From the project root:
 
 ```powershell
-.\.venv\Scripts\python.exe src/check_dataset.py
+.\.venv\Scripts\python.exe scripts/audit_dataset.py --data-dir data
 ```
 
-The existing script scans `data/chest_xray`, reports class counts, and attempts image verification with Pillow. Investigate missing folders, empty classes, or invalid images before proceeding. This is a basic image-file check; it does not audit patient separation, labels, duplicate leakage, or model accuracy. It currently reports problems in its output rather than returning a strict validation failure code.
+This reads and fully decodes the images, counts classes, records SHA-256 hashes, detects exact byte/pixel duplicates, and reports candidate subject IDs shared between splits. It writes `data/review/dataset_audit.json` and does not change source images. Missing folders or decode errors cause a failing exit code. If your raw folders are under `data/chest_xray`, use `--data-dir data/chest_xray` instead.
+
+The legacy `src/check_dataset.py` remains a basic header check hardcoded to `data/chest_xray`; use the audit tool for this local layout. A clean audit does not prove correct labels, authoritative patient identities, absence of near-duplicates, or medical accuracy.
 
 Do not replace the project's live checkpoint simply to check the download. The dataset check does not start an API, train a model, or change stored scans.
 
 ## Raw images versus prepared training data
 
 The current training configuration expects a **prepared** dataset at `data/model_data/`, also with `train`, `val`, and `test` folders containing the two class folders. Extracting to `data/chest_xray/` alone does not populate it.
+
+The [backend review](BACKEND_REVIEW.md) records the measured dataset/model baseline and a bug in the legacy `NORMAL2-IM-*` grouping logic. Review that before running preparation. No training or split changes are part of the review step.
 
 The existing `src/prepare_dataset.py` builds training and validation subsets from the **raw train folder**, defaulting to 85% / 15% with seed 42. It copies the raw test set and does not incorporate the bundled raw validation folder. It supports patient grouping and exact-file deduplication of the training candidate pool.
 
@@ -91,4 +97,4 @@ The existing evaluation report and files under `results/diagnostics/` describe p
 
 Obtain the following from your teammate if exact reproduction matters: the original dataset archive/version, the final split manifests or prepared dataset summary, preprocessing/exclusion choices, the exact training configuration/command, the checkpoint checksum, and the threshold-tuning/evaluation commands. The public download cannot recover undocumented experiment choices.
 
-For now, download, extract, and check the files. No training or dataset preparation has been run automatically. Backend request/storage tests and model-quality evaluation are separate tasks; passing the former does not establish the latter.
+At the review stage, audit the downloaded files and establish a fixed-model baseline before preparing a new experiment. No training or dataset preparation has been run automatically. Backend request/storage tests and model-quality evaluation are separate tasks; passing the former does not establish the latter.

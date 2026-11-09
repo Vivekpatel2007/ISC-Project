@@ -11,7 +11,8 @@ Endpoints:
 Security & Authorization Constraints:
 1. Doctors can upload scans and view/predict only their own uploaded scans.
 2. Radiologists have diagnostic clearance to view and run predictions on all patient scans.
-3. Plaintext images are NEVER written to disk at any point.
+3. Stored scans are encrypted and inference decryption stays in memory.
+   Multipart uploads may spool to framework temporary files before this handler.
 """
 
 from typing import Any, Dict, List, Optional
@@ -138,7 +139,7 @@ async def upload_scan(
         ) from None
 
     # 2. Read bytes safely
-    image_bytes = await file.read()
+    image_bytes = await file.read(MAX_IMAGE_SIZE_BYTES + 1)
     if len(image_bytes) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -148,7 +149,7 @@ async def upload_scan(
     if len(image_bytes) > MAX_IMAGE_SIZE_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"Uploaded image ({len(image_bytes)} bytes) exceeds the maximum limit ({MAX_IMAGE_SIZE_BYTES} bytes)."
+            detail=f"Uploaded image exceeds the maximum limit ({MAX_IMAGE_SIZE_BYTES} bytes)."
         )
 
     # 3. Validate image content & format directly in memory

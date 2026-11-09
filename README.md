@@ -99,6 +99,7 @@ graph TD
 - [Local Setup and Turborepo Commands](docs/LOCAL_SETUP.md)
 - [How the Model Works, CPU/GPU Selection & Hardware Requirements](docs/MODEL_AND_HARDWARE.md)
 - [Dataset Download, Folder Layout & Training Preparation](docs/DATASET_SETUP.md)
+- [Backend Review and Measured Model Baseline](docs/BACKEND_REVIEW.md)
 - [Complete User Guide, Page Map & RBAC Guide](USER_GUIDE_AND_ACCESS_CONTROL.md)
 - [Security Audit Report](docs/SECURITY_AUDIT.md)
 - [End-to-End Testing Report](docs/END_TO_END_TESTING.md)
@@ -201,7 +202,16 @@ The full backend suite remains available via `.\.venv\Scripts\python.exe -m pyte
 
 The teammate's [model evaluation report](results/model_evaluation_report.md) identifies **Kermany et al., Chest X-Ray Images (Pneumonia), from Kaggle**. Download the [Chest X-Ray Images (Pneumonia) dataset by Paul Mooney](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia), then extract the folder containing `train`, `val`, and `test` to `data/chest_xray/`. Each split should contain `NORMAL/` and `PNEUMONIA/`. The related [original Kermany dataset record](https://data.mendeley.com/datasets/rscbjbr9sj/2) includes both OCT and chest X-ray data; this project needs the chest X-rays.
 
-The images are not included in this repository. Downloading them does not retrain the model. The app and automated backend tests can use the saved checkpoint without the training dataset. Check the [dataset setup guide](docs/DATASET_SETUP.md) for the exact folder tree, a read-only image check, split limitations, and what to obtain from your teammate to reproduce the previous experiment. Local downloaded and prepared dataset folders are ignored by Git.
+The images are not included in this repository. Downloading them does not retrain the model. The app and automated backend tests can use the saved checkpoint without the training dataset. Check the [dataset setup guide](docs/DATASET_SETUP.md) for the exact folder tree, a read-only image check, split limitations, and what to obtain from your teammate to reproduce the previous experiment. The entire `data/` directory is ignored by Git.
+
+The current local download is directly under `data/train`, `data/val`, and `data/test`; the audit tools accept it without moving images:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/audit_dataset.py --data-dir data
+.\.venv\Scripts\python.exe scripts/evaluate_backend.py --data-dir data
+```
+
+These commands do not start servers or train. They write ignored reports under `data/review/`. The [backend review](docs/BACKEND_REVIEW.md) records 5,856 readable images and a fixed-checkpoint baseline of **84.94% accuracy / 80.00% balanced accuracy**, including **93 false positives among 234 normal images**. Patient independence remains unverified; these are dataset results, not clinical accuracy guarantees. The review also documents outstanding input-suitability, multipart-spooling, and dependency-security limitations before deployment.
 
 The existing report documents patient overlap and duplicate leakage in an earlier validation split. Before new training, audit the splits rather than treating the previous metrics or a new random split as independently validated accuracy.
 
