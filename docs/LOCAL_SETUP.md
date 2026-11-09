@@ -1,10 +1,10 @@
 # Local Setup and Turborepo Development Commands
 
-Run all commands from the project root: the folder containing `src/`, `frontend/`, and the root `package.json`. These instructions use Windows PowerShell. If your existing `.venv` already runs the app, keep it and skip steps 1 and 2.
+Run all commands from the project root: the folder containing `src/`, `frontend/`, and the root `package.json`. These instructions use Windows PowerShell. Read the [system requirements and GPU compatibility matrix](../README.md#system-requirements-read-before-setup) first. Keep an existing `.venv`; run step 2 once if migrating from CPU-only packages to GPU support.
 
 ## 1. Install prerequisites and create the environment
 
-Install [Python 3.11](https://www.python.org/downloads/) and [Node.js](https://nodejs.org/en/download/) version 22 or newer, with npm 10 or newer. Python 3.11 is the baseline for the CPU packages below.
+Install [Python 3.11](https://www.python.org/downloads/) and [Node.js](https://nodejs.org/en/download/) version 22 or newer, with npm 10 or newer. Python 3.11 is the baseline for all pinned compute profiles below. Skip environment creation if `.venv` exists.
 
 ```powershell
 py -3.11 --version
@@ -19,12 +19,15 @@ The launcher selects this project's `.venv` directly. Activating it with `Activa
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt -c constraints-local.txt
-.\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe scripts/setup_compute.py
+.\.venv\Scripts\python.exe scripts/setup_compute.py --install
 ```
 
-Install the CPU wheels first, then the requirements with `constraints-local.txt`. These constraints retain the PyTorch, FastAPI, and Pydantic versions that worked on this Windows setup after Application Control blocked newer native libraries. Inference uses CPU. GPU environments can use a separately validated dependency set. See [PyTorch's official version-specific commands](https://pytorch.org/get-started/previous-versions/).
+The first command prints a read-only plan using NVIDIA hardware, VRAM, compute capability, and driver information. The second installs the selected CPU/CUDA torch and torchvision pair, verifies actual execution, installs shared requirements with `constraints-local.txt`, and runs `pip check`. Explicit CUDA version pins replace existing CPU-only wheels even when their base version is the same. No drivers or servers are started. If automatic CUDA setup fails, the helper attempts to restore CPU packages; errors are reported if recovery also fails.
+
+Use `--device cpu --install` to install CPU packages deliberately, or `--device cuda --install` to require CUDA and report errors without automatic CPU recovery. With default `PULMOSCAN_DEVICE=auto`, the backend prefers a working GPU and otherwise uses CPU. Set `PULMOSCAN_DEVICE=cpu` in `.env` to force CPU execution. Native-library blocks must be resolved by using allowed packages; the helper never changes Windows security settings. Stop a running backend before replacing native packages.
+
+The CUDA profiles and conservative driver baselines are documented in the [README](../README.md#gpu-compatibility-and-automatic-cpu-fallback), using [PyTorch's official version-specific packages](https://pytorch.org/get-started/previous-versions/). Older or unknown GPU architectures and non-NVIDIA graphics use CPU in this setup. The standalone CUDA Toolkit is not required for these wheels.
 
 ## 3. Install Turborepo and frontend dependencies
 
@@ -57,7 +60,16 @@ If this returns `False`, obtain the trained checkpoint from the project owner an
 npm.cmd run dev:check
 ```
 
-This checks configuration files, backend imports, key formats, and the checkpoint path. It does not start a server, load model weights, or initialize the application database.
+This checks configuration files, backend imports, key formats, the checkpoint path, and a small compute kernel. It does not start a server, load model weights, or initialize the application database.
+
+For detailed compute information, and optionally one offline checkpoint smoke test:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/check_compute.py
+.\.venv\Scripts\python.exe scripts/check_compute.py --model
+```
+
+The latter loads the trained model and runs a synthetic image without starting services or writing predictions to the database. It verifies execution rather than medical accuracy.
 
 ## 6. Start both services with one command
 
@@ -118,7 +130,8 @@ The full backend suite is `.\.venv\Scripts\python.exe -m pytest tests/ -v`. Live
 | Missing `.venv` or Python imports | Complete steps 1 and 2; the launcher selects the project's `.venv`. |
 | Missing configuration files | Run the setup helper as shown in step 4. |
 | Invalid existing keys | Correct the existing `.env` using its original valid keys; setup deliberately preserves the file. |
-| Windows blocks a native library | Use the CPU install and constraints in step 2, then rerun `dev:check`. |
+| Windows blocks a native library | Try `setup_compute.py --device cpu --install` with the project interpreter, then rerun `dev:check`. Do not disable Application Control. |
+| GPU exists but compute reports CPU | Run `setup_compute.py` to inspect eligibility, then `setup_compute.py --install`; check `PULMOSCAN_DEVICE`, driver version, and `CUDA_VISIBLE_DEVICES`. |
 | Port 3000 or 8000 is in use | Stop previously running development instances before using the combined command. |
 | `npm.ps1` is blocked by PowerShell policy | Use `npm.cmd`, as shown throughout this guide. |
 

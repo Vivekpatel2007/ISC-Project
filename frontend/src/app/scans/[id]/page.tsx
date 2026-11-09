@@ -39,6 +39,7 @@ function ScanDetailContent({
   const { token } = useAuth();
   const [record, setRecord] = useState<{
     id: string;
+    revision: number;
     scan: ScanMetadata | null;
     error: string | null;
   } | null>(null);
@@ -55,7 +56,7 @@ function ScanDetailContent({
     apiClient
       .getScan(id, token)
       .then((scan) => {
-        if (active) setRecord({ id, scan, error: null });
+        if (active) setRecord({ id, revision, scan, error: null });
       })
       .catch((error: unknown) => {
         const message =
@@ -66,7 +67,7 @@ function ScanDetailContent({
               : error instanceof Error
                 ? error.message
                 : "Could not load this scan.";
-        if (active) setRecord({ id, scan: null, error: message });
+        if (active) setRecord({ id, revision, scan: null, error: message });
       });
     return () => {
       active = false;
@@ -75,7 +76,8 @@ function ScanDetailContent({
       setPredicting(false);
     };
   }, [id, token, revision]);
-  const scan = record?.id === id ? record.scan : null;
+  const scan =
+    record?.id === id && record.revision === revision ? record.scan : null;
   const output = prediction?.scan_id === id ? prediction : null;
   const run = async () => {
     if (!token || busy.current) return;
@@ -92,7 +94,7 @@ function ScanDetailContent({
       try {
         const updated = await apiClient.getScan(id, token);
         if (generation.current === current)
-          setRecord({ id, scan: updated, error: null });
+          setRecord({ id, revision, scan: updated, error: null });
       } catch {
         if (generation.current === current) setMetadataWarning(true);
       }
@@ -120,7 +122,7 @@ function ScanDetailContent({
           <ArrowLeft size={15} />
           Back to scan repository
         </Link>
-        {!record || record.id !== id ? (
+        {!record || record.id !== id || record.revision !== revision ? (
           <div className="panel">
             <LoadingState label="Loading scan details..." />
           </div>

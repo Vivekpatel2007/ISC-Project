@@ -157,4 +157,28 @@ describe('ScanDetailPage', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Integrity Tampering Error'));
     expect(screen.queryByText('95.40%')).not.toBeInTheDocument();
   });
+
+  it("shows loading feedback and removes the old error while retrying scan details", async () => {
+    let finishLoading!: () => void;
+    vi.spyOn(apiClient, "getScan")
+      .mockRejectedValueOnce(new Error("Connection unavailable"))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishLoading = () => resolve(mockScanRecord);
+          }),
+      );
+    render(<ScanDetailPage params={{ id: "scan-123-abc" }} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Loading scan details...",
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    await act(async () => {
+      finishLoading();
+    });
+    expect(
+      screen.getByRole("heading", { name: "ANON-99999" }),
+    ).toBeInTheDocument();
+  });
 });

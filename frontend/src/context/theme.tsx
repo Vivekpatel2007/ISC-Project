@@ -6,8 +6,10 @@ export type ThemePreference = "light" | "dark" | "system";
 export const THEME_STORAGE_KEY = "pulmoscan.theme";
 const themeEvent = "pulmoscan:theme-change";
 let memoryPreference: ThemePreference = "system";
+let useMemoryPreference = false;
 
 function readPreference(): ThemePreference {
+  if (useMemoryPreference) return memoryPreference;
   try {
     const value = localStorage.getItem(THEME_STORAGE_KEY);
     return value === "light" || value === "dark" ? value : "system";
@@ -46,7 +48,9 @@ export function setThemePreference(preference: ThemePreference) {
   memoryPreference = preference;
   try {
     localStorage.setItem(THEME_STORAGE_KEY, preference);
+    useMemoryPreference = false;
   } catch {
+    useMemoryPreference = true;
     /* Retain the choice for this visit. */
   }
   window.dispatchEvent(new Event(themeEvent));

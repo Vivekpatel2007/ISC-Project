@@ -120,4 +120,19 @@ describe("Appearance preferences", () => {
     showToggle();
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
   });
+
+  it("keeps the new theme in this tab if storage reads succeed but writes fail", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("Quota exceeded", "QuotaExceededError");
+    });
+    showToggle();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Switch to dark mode" }),
+    );
+    expect(document.documentElement).toHaveAttribute("data-theme", "dark");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Switch to light mode" }),
+    );
+    expect(document.documentElement).toHaveAttribute("data-theme", "light");
+  });
 });

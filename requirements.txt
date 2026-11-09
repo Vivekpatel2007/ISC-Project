@@ -1,4 +1,5 @@
 # Core Machine Learning & Vision
+# Use scripts/setup_compute.py for pinned CPU/CUDA wheels before these shared dependencies.
 torch>=2.1.0
 torchvision>=0.16.0
 numpy>=1.24.0

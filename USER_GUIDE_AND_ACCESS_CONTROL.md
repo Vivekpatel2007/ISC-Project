@@ -1047,17 +1047,17 @@ Standard binary classifiers apply an arbitrary 0.50 threshold. In medical screen
 ### 10.1 Environment Prerequisites
 
 - Windows PowerShell 5.1 or PowerShell 7+.
-- Python 3.11 for the documented CPU dependency baseline.
+- Python 3.11 for the documented CPU/CUDA dependency profiles.
 - Node.js 22+ and npm 10+.
 - The trained checkpoint at `models/densenet121_pneumonia_best.pth`, or the configured `MODEL_CHECKPOINT_PATH`.
 
 ### 10.2 Step-by-Step Installation & Configuration
 
-Run commands from the project root. Keep an existing working `.venv` and skip its creation and dependency installation. A standalone copy of this guide is in [docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md).
+Run commands from the project root. Read the [system requirements and GPU compatibility matrix](README.md#system-requirements-read-before-setup) first. Keep an existing `.venv` and skip creating it; run step 2 once when migrating from CPU-only packages to GPU support. A standalone copy of this guide is in [docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md).
 
 #### Step 1: Install prerequisites and create the environment
 
-Install [Python 3.11](https://www.python.org/downloads/) and [Node.js](https://nodejs.org/en/download/) version 22 or newer, with npm 10 or newer. Python 3.11 is the baseline for the CPU packages below.
+Install [Python 3.11](https://www.python.org/downloads/) and [Node.js](https://nodejs.org/en/download/) version 22 or newer, with npm 10 or newer. Python 3.11 is the baseline for all pinned compute profiles below.
 
 ```powershell
 py -3.11 --version
@@ -1072,12 +1072,11 @@ The launcher selects this project's `.venv` directly. Activating it with `Activa
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt -c constraints-local.txt
-.\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe scripts/setup_compute.py
+.\.venv\Scripts\python.exe scripts/setup_compute.py --install
 ```
 
-Install the CPU wheels first, then the requirements with `constraints-local.txt`. These constraints retain the PyTorch, FastAPI, and Pydantic versions that worked on this Windows setup after Application Control blocked newer native libraries. Inference uses CPU. GPU environments can use a separately validated dependency set. See [PyTorch's official version-specific commands](https://pytorch.org/get-started/previous-versions/).
+The first command prints a read-only hardware and dependency plan. The second installs a matching CPU/CUDA torch and torchvision pair, verifies actual compute execution, installs shared requirements with `constraints-local.txt`, and runs `pip check`. A qualifying NVIDIA GPU gets CUDA packages; other systems use CPU. Automatic setup attempts CPU recovery if CUDA installation or execution fails. Use `--device cpu --install` to select CPU dependencies deliberately, or `--device cuda --install` for strict GPU setup. Stop a running backend before replacing native packages. No drivers or servers are started. See the [README compatibility matrix](README.md#gpu-compatibility-and-automatic-cpu-fallback) and [official PyTorch package commands](https://pytorch.org/get-started/previous-versions/).
 
 #### Step 3: Install Turborepo and frontend dependencies
 
@@ -1110,7 +1109,9 @@ If this returns `False`, obtain the trained checkpoint from the project owner an
 npm.cmd run dev:check
 ```
 
-This checks configuration files, backend imports, key formats, and the checkpoint path. It does not start a server, load model weights, or initialize the application database.
+This checks configuration files, backend imports, key formats, the checkpoint path, and a small compute kernel. It does not start a server, load model weights, or initialize the application database.
+
+Use `.\.venv\Scripts\python.exe scripts/check_compute.py` to report the installed build and selected device. Add `--model` to run an offline synthetic-image checkpoint test without starting services or writing to the database. This verifies execution, not accuracy. Keep `PULMOSCAN_DEVICE=auto` for GPU preference with CPU fallback; use `cpu` to force CPU or `cuda` to require CUDA. The default applies even if an existing `.env` has no such entry.
 
 
 ### 10.3 Launching the Local Services
@@ -1190,7 +1191,7 @@ Press **Ctrl+C** in the terminal running `npm.cmd run dev` to stop both services
 | **Upload rejected (`Image validation failed`)** | File is corrupt, has disguised extension (e.g. text file renamed `.png`), or dimensions < 32px or > 4096px. | Open the image in Windows Paint or Photos. | Upload a genuine PNG or JPEG radiograph within $32\text{px} \times 32\text{px}$ to $4096\text{px} \times 4096\text{px}$. |
 | **Prediction fails (`409 Conflict: Cryptographic authentication failed`)** | Encrypted image file on disk was modified, corrupted, or key changed. | Check `secure_data/encrypted_images/{UUID}.enc` modification date. | Re-upload the original radiograph. GCM intentionally rejects tampered files. |
 | **Model checkpoint missing (`FileNotFoundError`)** | File `models/densenet121_pneumonia_best.pth` is missing or path in `.env` is incorrect. | Test path: `Test-Path models\densenet121_pneumonia_best.pth`. | Restore the 27.13 MB checkpoint file into `models/`. |
-| **CUDA unavailable warning on startup** | NVIDIA GPU driver or CUDA toolkit not installed. | Run `.\.venv\Scripts\python.exe -c "import torch; print(torch.cuda.is_available())"`. | No action needed. PulmoScan automatically and gracefully falls back to CPU inference. |
+| **CUDA unavailable warning on startup** | CPU-only torch, missing/incompatible driver, hidden GPU, or unsupported hardware. | Run `.\.venv\Scripts\python.exe scripts/setup_compute.py --check`. | Automatic mode falls back to CPU. To enable a qualifying GPU, run the helper with `--install`; check the README driver requirements and device preference. The standalone CUDA Toolkit is not required. |
 | **CORS error in browser console** | Frontend origin is not listed in `CORS_ORIGINS`. | Check `CORS_ORIGINS` in `.env` vs active browser URL. | Add your frontend origin (e.g. `http://localhost:3000`) to `CORS_ORIGINS` in `.env` and restart backend. |
 | **Docker unavailable** | Docker Desktop is not running or not installed. | Run `docker --version`. | Docker is completely optional. PulmoScan runs natively on Windows using Python and Node.js. |
 

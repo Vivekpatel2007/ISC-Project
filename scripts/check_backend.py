@@ -9,6 +9,7 @@ import sys
 
 def main() -> int:
     root = Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(root))
     try:
         for module in (
             'dotenv', 'fastapi', 'uvicorn', 'torch', 'torchvision', 'numpy',
@@ -38,6 +39,14 @@ def main() -> int:
         checkpoint = root / checkpoint
     if not checkpoint.is_file():
         print('Model checkpoint missing. Restore the model at MODEL_CHECKPOINT_PATH before starting the app.', file=sys.stderr)
+        return 1
+
+    from src.compute import select_device
+    try:
+        device = select_device()
+        print(f'Compute check: {device}.')
+    except (ValueError, RuntimeError) as error:
+        print(f'Compute check failed: {error}', file=sys.stderr)
         return 1
 
     print('Backend dependencies, local keys, and model checkpoint are available. No server was started.')

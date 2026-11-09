@@ -18,6 +18,7 @@ Features:
 """
 
 import io
+import logging
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -26,6 +27,7 @@ from PIL import Image
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
+from src.compute import device_preference, select_device
 
 from src.api.config import (
     ALLOWED_IMAGE_FORMATS,
@@ -37,7 +39,7 @@ from src.api.config import (
 # Pillow decompression bomb protection: limit total pixels to MAX_IMAGE_DIMENSION^2 (16,777,216 px)
 Image.MAX_IMAGE_PIXELS = MAX_IMAGE_DIMENSION * MAX_IMAGE_DIMENSION
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+logger = logging.getLogger(__name__)
 DISCLAIMER_TEXT = (
     "AI-assisted screening output for clinical decision support. "
     "Not a standalone or definitive medical diagnosis. "
@@ -61,12 +63,12 @@ class DenseNetInferenceEngine:
         if not self.checkpoint_path.exists():
             raise FileNotFoundError(f"Model checkpoint not found at: {self.checkpoint_path.resolve()}")
 
-        self.device = DEVICE
+        self.device = select_device()
         self._load_model()
 
     def _load_model(self) -> None:
         """Load weights, architecture, and inference metadata from checkpoint."""
-        ckpt = torch.load(self.checkpoint_path, map_location=self.device, weights_only=False)
+        ckpt = torch.load(self.checkpoint_path, map_location="cpu", weights_only=False)
 
         self.class_names = ckpt.get("class_names", ["NORMAL", "PNEUMONIA"])
         self.class_to_idx = ckpt.get("class_to_idx", {"NORMAL": 0, "PNEUMONIA": 1})
@@ -87,8 +89,20 @@ class DenseNetInferenceEngine:
             model.classifier = nn.Linear(in_features, len(self.class_names))
 
         model.load_state_dict(ckpt["model_state_dict"])
-        model.to(self.device)
         model.eval()
+        try:
+            model.to(self.device)
+            if self.device.type == "cuda":
+                # Verify the actual architecture and precision before accepting requests.
+                with torch.inference_mode(), torch.autocast("cuda", dtype=torch.float16):
+                    model(torch.zeros(1, 3, self.image_size, self.image_size, device=self.device))
+                torch.cuda.synchronize(self.device)
+        except RuntimeError:
+            if self.device.type != "cuda" or device_preference() != "auto":
+                raise
+            logger.warning("CUDA model initialization failed; using CPU instead.", exc_info=True)
+            self.device = torch.device("cpu")
+            model.to(self.device)
         self.model = model
 
         # Standardized eval transformation
