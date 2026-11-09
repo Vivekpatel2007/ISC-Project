@@ -46,6 +46,19 @@ def test_existing_cpu_build_is_replaced_by_an_explicit_cuda_build():
     assert setup.CUDA124.packages == ['torch==2.5.1+cu124', 'torchvision==0.20.1+cu124']
 
 
+@pytest.mark.parametrize('profile', [setup.CPU, setup.CUDA124, setup.CUDA128])
+def test_shared_dependency_install_preserves_selected_profile(monkeypatch, profile, capsys):
+    pip = Mock()
+    monkeypatch.setattr(setup, 'pip', pip)
+    monkeypatch.setattr(setup, 'verify', Mock())
+    assert setup.install(profile, 'auto') == profile
+    assert pip.call_args_list[1].args == (
+        'install', '-r', 'requirements.txt', '-c', 'constraints-local.txt',
+        '-c', str(profile.requirements_path),
+    )
+    assert 'requirements.txt' in capsys.readouterr().out
+
+
 def test_auto_restores_cpu_when_cuda_execution_fails(monkeypatch):
     pip = Mock()
     verify = Mock(side_effect=[subprocess.CalledProcessError(1, 'probe'), None, None])

@@ -1078,6 +1078,10 @@ The launcher selects this project's `.venv` directly. Activating it with `Activa
 
 The first command prints a read-only hardware and dependency plan. The second installs a matching CPU/CUDA torch and torchvision pair, verifies actual compute execution, installs shared requirements with `constraints-local.txt`, and runs `pip check`. A qualifying NVIDIA GPU gets CUDA packages; other systems use CPU. Automatic setup attempts CPU recovery if CUDA installation or execution fails. Use `--device cpu --install` to select CPU dependencies deliberately, or `--device cuda --install` for strict GPU setup. Stop a running backend before replacing native packages. No drivers or servers are started. See the [README compatibility matrix](README.md#gpu-compatibility-and-automatic-cpu-fallback) and [official PyTorch package commands](https://pytorch.org/get-started/previous-versions/).
 
+The helper explicitly installs `requirements.txt` after selecting the pinned torch pair from `requirements/compute-*.txt`. To reinstall only the shared dependencies later, run `.\.venv\Scripts\python.exe -m pip install -r requirements.txt -c constraints-local.txt`; this shared file does not replace torch. A fresh setup still requires the compute profile. See [dependency-file roles and manual commands](README.md#where-python-dependencies-are-installed).
+
+The teammate's report names the Kermany/Paul Mooney Kaggle chest X-ray dataset. Follow [docs/DATASET_SETUP.md](docs/DATASET_SETUP.md) for the download link and extraction layout. The dataset is optional for running the app and automated backend tests, and required for meaningful model evaluation or retraining.
+
 #### Step 3: Install Turborepo and frontend dependencies
 
 ```powershell

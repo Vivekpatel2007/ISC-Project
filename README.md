@@ -98,6 +98,7 @@ graph TD
 
 - [Local Setup and Turborepo Commands](docs/LOCAL_SETUP.md)
 - [How the Model Works, CPU/GPU Selection & Hardware Requirements](docs/MODEL_AND_HARDWARE.md)
+- [Dataset Download, Folder Layout & Training Preparation](docs/DATASET_SETUP.md)
 - [Complete User Guide, Page Map & RBAC Guide](USER_GUIDE_AND_ACCESS_CONTROL.md)
 - [Security Audit Report](docs/SECURITY_AUDIT.md)
 - [End-to-End Testing Report](docs/END_TO_END_TESTING.md)
@@ -136,6 +137,37 @@ These commands use Windows PowerShell. On supported Linux x86-64 systems, create
 
 For later runs, dependency installation is unnecessary unless rebuilding or changing the environment. `scripts/check_compute.py` reports the installed torch build, packaged CUDA runtime, and actual selected device. The offline `--model` test uses a synthetic image to verify execution, not diagnostic accuracy.
 
+### Where Python dependencies are installed
+
+`setup_compute.py --install` performs **both** installations: the selected torch/torchvision profile, then **`pip install -r requirements.txt`** with the project's compatibility constraints. It prints that second step explicitly and finishes with `pip check`. Both stages are required for a fresh environment.
+
+| File | Purpose |
+|---|---|
+| `requirements.txt` | Pinned shared dependencies used by the API, model preprocessing/training/evaluation, plots, and backend tests |
+| `requirements/compute-cpu.txt` | Exact CPU-only torch/torchvision pair |
+| `requirements/compute-cu124.txt` | Exact CUDA 12.4 pair, including the GTX 1650 profile |
+| `requirements/compute-cu128.txt` | Exact CUDA 12.8 pair for the documented Blackwell profile |
+| `constraints-local.txt` | Additional compatibility constraints for the shared backend stack |
+
+Hardware-dependent torch packages are kept out of the shared file so reinstalling shared dependencies cannot replace a CUDA installation with a CPU build or select an unrelated torch version. Versions come from the working Python 3.11 setup; this is a direct-dependency pin set, not a complete transitive lockfile. No Kaggle SDK, OpenCV, TensorFlow, or other unused frameworks are required.
+
+To reinstall **only shared dependencies** after selecting the compute profile:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt -c constraints-local.txt
+.\.venv\Scripts\python.exe -m pip check
+```
+
+For a fresh environment, use `setup_compute.py --install` first; the shared file alone intentionally does not install torch. Equivalent manual GPU installation for your GTX 1650 is:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements/compute-cu124.txt --index-url https://download.pytorch.org/whl/cu124
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt -c constraints-local.txt
+.\.venv\Scripts\python.exe scripts/check_compute.py --model
+```
+
+Use `requirements/compute-cpu.txt` with the `/cpu` wheel index for a CPU-only installation. The automatic helper remains the recommended route because it checks eligibility and handles fallback.
+
 Then start both services manually with one command:
 
 ```powershell
@@ -162,6 +194,16 @@ npm.cmd --prefix frontend run lint
 ```
 
 The full backend suite remains available via `.\.venv\Scripts\python.exe -m pytest tests/ -v`. The live workflow check requires an already running backend: `.\.venv\Scripts\python.exe tests/e2e_live_verification.py`.
+
+---
+
+## Dataset for Training and Evaluation
+
+The teammate's [model evaluation report](results/model_evaluation_report.md) identifies **Kermany et al., Chest X-Ray Images (Pneumonia), from Kaggle**. Download the [Chest X-Ray Images (Pneumonia) dataset by Paul Mooney](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia), then extract the folder containing `train`, `val`, and `test` to `data/chest_xray/`. Each split should contain `NORMAL/` and `PNEUMONIA/`. The related [original Kermany dataset record](https://data.mendeley.com/datasets/rscbjbr9sj/2) includes both OCT and chest X-ray data; this project needs the chest X-rays.
+
+The images are not included in this repository. Downloading them does not retrain the model. The app and automated backend tests can use the saved checkpoint without the training dataset. Check the [dataset setup guide](docs/DATASET_SETUP.md) for the exact folder tree, a read-only image check, split limitations, and what to obtain from your teammate to reproduce the previous experiment. Local downloaded and prepared dataset folders are ignored by Git.
+
+The existing report documents patient overlap and duplicate leakage in an earlier validation split. Before new training, audit the splits rather than treating the previous metrics or a new random split as independently validated accuracy.
 
 ---
 

@@ -9,7 +9,6 @@ import platform
 import shutil
 import subprocess
 import sys
-import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -18,21 +17,24 @@ sys.path.insert(0, str(ROOT))
 @dataclass(frozen=True)
 class Profile:
     name: str
-    torch: str
-    vision: str
+
+    @property
+    def requirements_path(self):
+        return ROOT / 'requirements' / f'compute-{self.name}.txt'
 
     @property
     def packages(self):
-        return [f'torch=={self.torch}+{self.name}', f'torchvision=={self.vision}+{self.name}']
+        return [line.strip() for line in self.requirements_path.read_text(encoding='utf-8').splitlines()
+                if line.strip() and not line.lstrip().startswith('#')]
 
     @property
     def index(self):
         return f'https://download.pytorch.org/whl/{self.name}'
 
 
-CPU = Profile('cpu', '2.5.1', '0.20.1')
-CUDA124 = Profile('cu124', '2.5.1', '0.20.1')
-CUDA128 = Profile('cu128', '2.7.1', '0.22.1')
+CPU = Profile('cpu')
+CUDA124 = Profile('cu124')
+CUDA128 = Profile('cu128')
 LEGACY_CAPABILITIES = {'7.5', '8.0', '8.6', '8.9', '9.0'}
 BLACKWELL_CAPABILITIES = {'10.0', '12.0'}
 
@@ -117,11 +119,10 @@ def install(profile, requested):
         pip('install', *profile.packages, '--index-url', profile.index)
         verify(profile)
 
-    # Preserve the exact selected build when resolving the common requirements.
-    with tempfile.TemporaryDirectory(prefix='pulmoscan-compute-') as directory:
-        constraints = Path(directory) / 'compute.txt'
-        constraints.write_text('\n'.join(profile.packages) + '\n', encoding='utf-8')
-        pip('install', '-r', 'requirements.txt', '-c', 'constraints-local.txt', '-c', str(constraints))
+    # The shared requirements contain no hardware-dependent torch replacement.
+    # Retain the selected profile as constraints for any transitive torch requirement.
+    print('Installing shared Python dependencies from requirements.txt ...', flush=True)
+    pip('install', '-r', 'requirements.txt', '-c', 'constraints-local.txt', '-c', str(profile.requirements_path))
     pip('check')
     verify(profile)
     return profile

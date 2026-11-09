@@ -25,6 +25,17 @@ The launcher selects this project's `.venv` directly. Activating it with `Activa
 
 The first command prints a read-only plan using NVIDIA hardware, VRAM, compute capability, and driver information. The second installs the selected CPU/CUDA torch and torchvision pair, verifies actual execution, installs shared requirements with `constraints-local.txt`, and runs `pip check`. Explicit CUDA version pins replace existing CPU-only wheels even when their base version is the same. No drivers or servers are started. If automatic CUDA setup fails, the helper attempts to restore CPU packages; errors are reported if recovery also fails.
 
+The plan/install commands above follow the pip upgrade. `setup_compute.py --install` **already runs the equivalent of** `.\.venv\Scripts\python.exe -m pip install -r requirements.txt -c constraints-local.txt` after selecting the compute packages. Shared dependencies are pinned in `requirements.txt`; the exact CPU/CUDA torch pairs live in `requirements/compute-*.txt`. The helper reads those files rather than keeping separate package versions in code.
+
+To reinstall just the shared requirements later without changing the installed CPU/CUDA pair:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt -c constraints-local.txt
+.\.venv\Scripts\python.exe -m pip check
+```
+
+The shared requirements alone are not a complete fresh installation: select a compute profile first. For manual profile commands and dependency-file roles, see the [README dependency instructions](../README.md#where-python-dependencies-are-installed).
+
 Use `--device cpu --install` to install CPU packages deliberately, or `--device cuda --install` to require CUDA and report errors without automatic CPU recovery. With default `PULMOSCAN_DEVICE=auto`, the backend prefers a working GPU and otherwise uses CPU. Set `PULMOSCAN_DEVICE=cpu` in `.env` to force CPU execution. Native-library blocks must be resolved by using allowed packages; the helper never changes Windows security settings. Stop a running backend before replacing native packages.
 
 The CUDA profiles and conservative driver baselines are documented in the [README](../README.md#gpu-compatibility-and-automatic-cpu-fallback), using [PyTorch's official version-specific packages](https://pytorch.org/get-started/previous-versions/). Older or unknown GPU architectures and non-NVIDIA graphics use CPU in this setup. The standalone CUDA Toolkit is not required for these wheels.
@@ -53,6 +64,8 @@ Test-Path .\models\densenet121_pneumonia_best.pth
 ```
 
 If this returns `False`, obtain the trained checkpoint from the project owner and place it at that path, or configure `MODEL_CHECKPOINT_PATH` in `.env`. The checkpoint is needed to start the API. The training dataset is not needed to run the web app.
+
+For the dataset download and exact raw/prepared folder layouts, use [the dataset setup guide](DATASET_SETUP.md). Downloading training images is separate from installing Python packages.
 
 ## 5. Verify setup without starting servers
 

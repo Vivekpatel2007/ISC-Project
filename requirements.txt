@@ -1,24 +1,30 @@
-# Core Machine Learning & Vision
-# Use scripts/setup_compute.py for pinned CPU/CUDA wheels before these shared dependencies.
-torch>=2.1.0
-torchvision>=0.16.0
-numpy>=1.24.0
-scikit-learn>=1.3.0
-scipy>=1.10.0
-pillow>=10.0.0
-matplotlib>=3.7.0
+# Shared direct Python dependencies, pinned to the working Python 3.11 environment.
+# First select torch/torchvision using scripts/setup_compute.py --install.
+# Their exact CPU/CUDA pins live in requirements/compute-*.txt because hardware
+# cannot be selected with pip's platform markers. This file never replaces them.
+# setup_compute.py installs this file too; a separate reinstall is also safe:
+# .venv/Scripts/python.exe -m pip install -r requirements.txt
+# Transitive packages (e.g. scipy) are installed by their parent dependencies.
 
-# Cryptography & Security (Phase 1)
-cryptography>=42.0.0
-python-dotenv>=1.0.0
+# Model preprocessing, training, evaluation, and plots
+numpy==2.4.6
+scikit-learn==1.9.1
+pillow==13.0.0
+matplotlib==3.11.2
 
-# FastAPI Backend & Authentication (Phase 2)
-fastapi>=0.110.0
-uvicorn>=0.28.0
-python-multipart>=0.0.9
-pyjwt>=2.8.0
-bcrypt>=4.1.0
+# Encryption and local configuration
+cryptography==50.0.2
+python-dotenv==1.2.4
 
-# Testing & Quality Assurance
-pytest>=8.0.0
-httpx>=0.27.0
+# API, validation, authentication, and upload handling
+fastapi==0.115.12
+pydantic==2.10.6
+starlette==0.46.2
+uvicorn==0.54.0
+python-multipart==0.0.33
+pyjwt==2.15.1
+bcrypt==5.0.0
+
+# Backend tests (included in the documented local development environment)
+pytest==9.2.0
+httpx==0.28.1
