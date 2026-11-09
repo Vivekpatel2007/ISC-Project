@@ -113,18 +113,19 @@ export const apiClient = {
   /**
    * Authenticate practitioner credentials and receive JWT
    */
-  async login(username: string, password: string): Promise<TokenResponse> {
+  async login(username: string, password: string, signal?: AbortSignal): Promise<TokenResponse> {
     return request<TokenResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
+      ...(signal ? { signal } : {}),
     });
   },
 
   /**
    * Retrieve current authenticated practitioner profile and assigned RBAC role
    */
-  async getMe(token: string): Promise<UserProfile> {
-    return request<UserProfile>('/auth/me', { method: 'GET' }, token);
+  async getMe(token: string, signal?: AbortSignal): Promise<UserProfile> {
+    return request<UserProfile>('/auth/me', { method: 'GET', ...(signal ? { signal } : {}) }, token);
   },
 
   /**

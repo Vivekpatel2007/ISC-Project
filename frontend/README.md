@@ -69,7 +69,7 @@ The backend database is pre-seeded with two practitioner accounts for evaluation
 | **Doctor** | `doctor1` | `DoctorPassword123!` | Dr. Sarah Chen, MD (Pediatrics) | Upload scans; view/predict own uploaded scans only. |
 | **Radiologist** | `radiologist1` | `RadioPassword123!` | Dr. James Wilson, MD (Radiology) | View all institutional scans; run predictions across all scans. |
 
-*(The login screen includes quick-fill helper buttons for one-click testing without manual credential entry).*
+Enter credentials manually at `/login/staff` (doctor/admin) or `/login/radiologist`. The portal links switch pages without filling credentials. `/login` reopens the last selected portal; only this portal preference is remembered in localStorage. Account roles come from the backend profile, and an account must match the selected portal before a session is established.
 
 ---
 

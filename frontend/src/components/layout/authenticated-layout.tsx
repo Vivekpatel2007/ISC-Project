@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Menu, X, AlertTriangle, Activity } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { Sidebar } from './sidebar';
+import { getLoginPath } from '@/lib/login-portal';
 
 export function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -13,7 +14,7 @@ export function AuthenticatedLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+      router.replace(getLoginPath());
     }
   }, [isLoading, isAuthenticated, router]);
 
@@ -40,7 +41,7 @@ export function AuthenticatedLayout({ children }: { children: React.ReactNode })
             You must log in with your healthcare credentials to access the PulmoScan repository.
           </p>
           <button
-            onClick={() => router.push('/login')}
+            onClick={() => router.replace(getLoginPath())}
             className="w-full py-2.5 px-4 bg-sky-600 hover:bg-sky-700 text-white font-medium text-sm rounded-lg transition-colors"
           >
             Go to Login

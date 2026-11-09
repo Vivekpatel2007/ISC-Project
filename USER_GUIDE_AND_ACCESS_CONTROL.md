@@ -650,14 +650,15 @@ The in-memory token architecture results in the following operational characteri
 
 ## 6. End-to-End User Workflows
 
-### Workflow A: Staff Authentication & Logout
+### Workflow A: Staff / Radiologist Authentication & Logout
 
-1. **Open Login Portal:** Navigate to `http://localhost:3000/login`.
-2. **Input Credentials:** Enter your staff username and account password (or click a **"Fill Demo"** button).
+1. **Open Login Portal:** Use `http://localhost:3000/login/staff` for doctors and administrators, or `http://localhost:3000/login/radiologist` for radiologists. `/login` opens the last selected portal, defaulting to Staff on a first visit.
+2. **Input Credentials:** Enter your username and password manually. The Staff and Radiologist links switch portals and do not fill credentials.
 3. **Form Validation:** The frontend verifies that username and password are non-empty.
-4. **Submission:** Click **"Authenticate Session"**. The client sends `POST /auth/login`.
-5. **Session Initialization:** Upon receiving `HTTP 200 OK`, `login()` immediately requests `GET /auth/me`, caches the token and user profile in React state, and routes to `/`.
-6. **Sign Out:** Click **"Sign Out"** in the sidebar or **"End Session"** on `/profile`. The context resets `token` and `user` to `null` and navigates to `/login`.
+4. **Submission:** Click **"Sign In to System"**. The client sends `POST /auth/login`. Duplicate submissions are blocked, and leaving the form cancels the pending sign-in.
+5. **Session Initialization:** The frontend requests `GET /auth/me` and checks that the backend account role matches the selected portal before installing the in-memory session and navigating to `/`. Choosing a portal does not assign a role; the backend enforces API access and scan ownership.
+6. **Sign Out:** Click **"Sign Out"** in the sidebar or **"Sign Out of Session"** on `/profile`. The frontend clears session and cached page state and returns to that account's login portal with empty fields.
+7. **Refresh / Reopen:** The explicit portal URL survives refresh. The non-sensitive `pulmoscan.login-portal` preference in localStorage restores the last selected portal when returning through `/login` or a protected page. Credentials, tokens, and account details are never stored there. A refresh or new tab requires a new sign-in; browser back/forward restoration clears the form as well.
 
 ---
 

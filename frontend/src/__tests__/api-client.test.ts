@@ -86,6 +86,22 @@ describe('apiClient', () => {
     );
   });
 
+  it.each(['login', 'profile'])('forwards the cancellation signal for the %s request', async (endpoint) => {
+    const controller = new AbortController();
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true, status: 200, json: async () => ({}),
+    } as Response);
+    if (endpoint === 'login') {
+      await apiClient.login('doctor1', 'DoctorPassword123!', controller.signal);
+    } else {
+      await apiClient.getMe('test-token', controller.signal);
+    }
+    expect(fetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/auth/${endpoint === 'login' ? 'login' : 'me'}`,
+      expect.objectContaining({ signal: controller.signal }),
+    );
+  });
+
   it('uploads scan with FormData without manual Content-Type override', async () => {
     const mockScan = {
       scan_id: 'scan-uuid-999',
