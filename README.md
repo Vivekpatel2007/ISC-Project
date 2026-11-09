@@ -58,49 +58,56 @@ graph TD
 
 ## Project Documentation Index
 
-- [Complete User Guide, Page Map & RBAC Guide](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/USER_GUIDE_AND_ACCESS_CONTROL.md)
-- [Phase 5 Release Report](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/PHASE_5_RELEASE_REPORT.md)
-- [Staging Deployment & Demo Guide](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/STAGING_DEPLOYMENT_GUIDE.md)
-- [Rollback & Disaster Recovery Guide](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/ROLLBACK_RECOVERY_GUIDE.md)
-- [Release Readiness Checklist](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/RELEASE_CHECKLIST.md)
-- [Security Audit Report](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/SECURITY_AUDIT.md)
-- [End-to-End Testing Report](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/END_TO_END_TESTING.md)
-- [Deployment Preparation & Operations Guide](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/DEPLOYMENT.md)
-- [API Documentation](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/API_DOCUMENTATION.md)
-- [Secure Storage Cryptography Specification](file:///c:/Users/VIVEK/Desktop/ISC%20Project/docs/SECURE_STORAGE.md)
-- [Frontend Documentation](file:///c:/Users/VIVEK/Desktop/ISC%20Project/frontend/README.md)
+- [Local Setup and Turborepo Commands](docs/LOCAL_SETUP.md)
+- [Complete User Guide, Page Map & RBAC Guide](USER_GUIDE_AND_ACCESS_CONTROL.md)
+- [Security Audit Report](docs/SECURITY_AUDIT.md)
+- [End-to-End Testing Report](docs/END_TO_END_TESTING.md)
+- [Deployment Preparation & Operations Guide](docs/DEPLOYMENT.md)
+- [API Documentation](docs/API_DOCUMENTATION.md)
+- [Secure Storage Cryptography Specification](docs/SECURE_STORAGE.md)
+- [Frontend Documentation](frontend/README.md)
 
 ---
 
-## Running the Application
+## Local Setup and Running the Application
 
-### 1. Run the Backend API
+Follow the [complete setup guide](docs/LOCAL_SETUP.md) for prerequisites, creating `.venv`, installing Python and Node dependencies, and generating local configuration. The same steps are included in [section 10 of the user guide](USER_GUIDE_AND_ACCESS_CONTROL.md#10-local-setup--execution-guide-windows-powershell).
+
+If the existing Python environment already runs the app, keep it. From the project root, install the new Turborepo dependency and check setup:
+
 ```powershell
-# From project root
-.\.venv\Scripts\python.exe -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000
+npm.cmd ci
+npm.cmd ci --prefix frontend
+.\.venv\Scripts\python.exe scripts/setup_local_env.py
+npm.cmd run dev:check
 ```
-Interactive API docs: `http://127.0.0.1:8000/docs`
 
-### 2. Run the Next.js Frontend
+Then start both services manually with one command:
+
 ```powershell
-# From frontend/ directory
-cd frontend
-npm run dev
+npm.cmd run dev
 ```
-Open `http://localhost:3000` in browser.
 
-### 3. Run Test Suites
+Turborepo checks setup once, then starts FastAPI and Next.js concurrently with labelled logs. Press **Ctrl+C** to stop both. The launcher uses this project's `.venv` directly; activating it is optional.
+
+| Interface | URL |
+|---|---|
+| Staff login | http://localhost:3000/login/staff |
+| Radiologist login | http://localhost:3000/login/radiologist |
+| Backend readiness | http://127.0.0.1:8000/health/ready |
+| API documentation | http://127.0.0.1:8000/docs |
+
+Use `npm.cmd run dev:frontend` or `npm.cmd run dev:backend` to launch one service. `npm.cmd run dev:plan` shows Turbo's task plan without executing it.
+
+### Automated Checks
+
 ```powershell
-# Run backend pytest suite (44 tests)
-.\.venv\Scripts\python.exe -m pytest tests/ -v
-
-# Run live end-to-end verification (requires backend running)
-.\.venv\Scripts\python.exe tests/e2e_live_verification.py
-
-# Run frontend test suite (26 tests)
-cd frontend
-npm run test
+.\.venv\Scripts\python.exe -m pytest tests/test_dev_setup.py -v
+npm.cmd --prefix frontend test
+npm.cmd --prefix frontend run lint
 ```
+
+The full backend suite remains available via `.\.venv\Scripts\python.exe -m pytest tests/ -v`. The live workflow check requires an already running backend: `.\.venv\Scripts\python.exe tests/e2e_live_verification.py`.
 
 ---
 

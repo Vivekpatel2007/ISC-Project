@@ -3,6 +3,11 @@
 venv/
 env/
 
+# Local Node dependencies and Turborepo task output
+node_modules/
+.turbo/
+npm-debug.log*
+
 # Python cache & artifacts
 __pycache__/
 *.py[cod]

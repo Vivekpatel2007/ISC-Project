@@ -75,53 +75,32 @@ Enter credentials manually at `/login/staff` (doctor/admin) or `/login/radiologi
 
 ## 5. Prerequisites
 
-- **Node.js**: v20+ or v24+ (`node -v`)
-- **npm**: v10+ or v11+ (`npm -v`)
-- **Python**: 3.10+ (for backend) inside existing `.venv` virtual environment
-
----
+Use Python 3.11, Node.js 22+, and npm 10+ for the documented local setup. Complete the [setup guide](../docs/LOCAL_SETUP.md) first, including `.venv`, Python dependencies, and local configuration.
 
 ## 6. Installation & Setup
 
-### 6.1 Configure Environment Variables
+From the project root:
 
-Create `.env.local` inside the `frontend/` directory:
-
-```bash
-cp .env.local.example .env.local
-```
-
-Contents of `frontend/.env.local`:
-```env
-NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
-```
-
-### 6.2 Install Dependencies
-
-From `frontend/` directory:
 ```powershell
-npm install
+npm.cmd ci
+npm.cmd ci --prefix frontend
+.\.venv\Scripts\python.exe scripts/setup_local_env.py
+npm.cmd run dev:check
 ```
 
----
+The setup helper creates missing environment files and preserves existing keys and settings. The frontend API URL defaults to `http://127.0.0.1:8000` in `frontend/.env.local`.
 
 ## 7. How to Run (PowerShell Commands)
 
-### Step 1: Start the FastAPI Backend Server
-Open a PowerShell terminal in the repository root:
-```powershell
-Set-Location "C:\Users\VIVEK\Desktop\ISC Project"
-.\.venv\Scripts\python.exe -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000 --reload
-```
-Verify backend readiness at: [http://127.0.0.1:8000/health/ready](http://127.0.0.1:8000/health/ready)
+From the project root, start both services manually in one terminal:
 
-### Step 2: Start the Next.js Frontend Server
-Open a second PowerShell terminal in `frontend/`:
 ```powershell
-Set-Location "C:\Users\VIVEK\Desktop\ISC Project\frontend"
-npm run dev
+npm.cmd run dev
 ```
-Open your browser and navigate to: **[http://localhost:3000](http://localhost:3000)**
+
+Turborepo checks setup, then runs Next.js and FastAPI concurrently. Stop both with **Ctrl+C**. Open [Staff Login](http://localhost:3000/login/staff) or [Radiologist Login](http://localhost:3000/login/radiologist).
+
+For separate terminals, run `npm.cmd run dev:frontend` and `npm.cmd run dev:backend` from the root. `npm.cmd run dev:plan` prints the task plan without starting either service.
 
 ---
 
@@ -132,10 +111,10 @@ From `frontend/` directory:
 ```powershell
 npm run test
 ```
-**Results**: 26 automated unit and integration tests passing:
+**Coverage**: Automated unit and integration tests include:
 - `api-client.test.ts`: JSON/FormData serialization, Bearer token headers, 401/409/network error extraction.
 - `auth-context.test.tsx`: In-memory token management, login/logout transitions, route protection.
-- `login-page.test.tsx`: Form validation, show/hide password toggle, demo credential autofill, error alerts.
+- `login-page.test.tsx`: Portal selection and persistence, credential clearing, role mismatch rejection, cancellation, and error alerts.
 - `upload-page.test.tsx`: Format validation (JPEG/PNG), file size limits (20MB), patient ID regex validation.
 - `scans-history.test.tsx`: Empty state, patient ID filtering, status button filters.
 - `prediction-view.test.tsx`: Metadata rendering, DenseNet121 inference visualization, probability bars, GCM tampering detection.

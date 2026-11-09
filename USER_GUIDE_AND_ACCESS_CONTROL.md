@@ -98,17 +98,15 @@ When started in development mode (`APP_ENV=development`), the backend database s
 
 ### 3. Quick Launch Commands (Windows PowerShell)
 
-```powershell
-# Terminal 1: Launch FastAPI Backend
-cd "C:\Users\VIVEK\Desktop\ISC Project"
-.\.venv\Scripts\python.exe -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000 --reload
+Complete [section 10](#10-local-setup--execution-guide-windows-powershell) first, then start both services from one terminal at the project root:
 
-# Terminal 2: Launch Next.js Frontend
-cd "C:\Users\VIVEK\Desktop\ISC Project\frontend"
-npm run dev
+```powershell
+npm.cmd run dev
 ```
 
-Open `http://localhost:3000` in your web browser. Click the **"Fill Doctor Demo"** or **"Fill Radiologist Demo"** button on the login screen to sign in instantly.
+The setup check runs first, then FastAPI and Next.js run concurrently with labelled logs. Press **Ctrl+C** to stop both. Use `npm.cmd run dev:check` to verify setup without starting services.
+
+Open `http://localhost:3000/login/staff` or `http://localhost:3000/login/radiologist` and enter credentials manually. Portal links switch pages without filling credentials.
 
 ---
 
@@ -1046,129 +1044,134 @@ Standard binary classifiers apply an arbitrary 0.50 threshold. In medical screen
 
 ## 10. Local Setup & Execution Guide (Windows PowerShell)
 
-Follow this complete step-by-step guide to run PulmoScan on Windows using PowerShell:
-
 ### 10.1 Environment Prerequisites
 
-- **Operating System:** Windows 10 or Windows 11.
-- **Python:** Python 3.10 to 3.14 (Python 3.14.2 verified).
-- **Node.js:** Node.js 18.x to 24.x (v24.1.0 verified) and npm 9+ (11.3.0 verified).
-- **PowerShell:** Windows PowerShell 5.1 or PowerShell Core 7+.
-
----
+- Windows PowerShell 5.1 or PowerShell 7+.
+- Python 3.11 for the documented CPU dependency baseline.
+- Node.js 22+ and npm 10+.
+- The trained checkpoint at `models/densenet121_pneumonia_best.pth`, or the configured `MODEL_CHECKPOINT_PATH`.
 
 ### 10.2 Step-by-Step Installation & Configuration
 
-#### Step 1: Open PowerShell and Navigate to Project Root
+Run commands from the project root. Keep an existing working `.venv` and skip its creation and dependency installation. A standalone copy of this guide is in [docs/LOCAL_SETUP.md](docs/LOCAL_SETUP.md).
+
+#### Step 1: Install prerequisites and create the environment
+
+Install [Python 3.11](https://www.python.org/downloads/) and [Node.js](https://nodejs.org/en/download/) version 22 or newer, with npm 10 or newer. Python 3.11 is the baseline for the CPU packages below.
+
 ```powershell
-cd "C:\Users\VIVEK\Desktop\ISC Project"
+py -3.11 --version
+node --version
+npm.cmd --version
+py -3.11 -m venv .venv
 ```
 
-#### Step 2: Verify Existing Python Virtual Environment
-Check if `.venv` exists:
+The launcher selects this project's `.venv` directly. Activating it with `Activate.ps1` is optional; these commands work without changing PowerShell's execution policy.
+
+#### Step 2: Install Python dependencies
+
 ```powershell
-Get-ChildItem .venv\Scripts\python.exe
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt -c constraints-local.txt
+.\.venv\Scripts\python.exe -m pip check
 ```
-If `.venv` is not present, create and populate it:
+
+Install the CPU wheels first, then the requirements with `constraints-local.txt`. These constraints retain the PyTorch, FastAPI, and Pydantic versions that worked on this Windows setup after Application Control blocked newer native libraries. Inference uses CPU. GPU environments can use a separately validated dependency set. See [PyTorch's official version-specific commands](https://pytorch.org/get-started/previous-versions/).
+
+#### Step 3: Install Turborepo and frontend dependencies
+
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+npm.cmd ci
+npm.cmd ci --prefix frontend
 ```
 
-#### Step 3: Install Frontend Dependencies
+The root lockfile installs the pinned Turborepo version. The frontend keeps its existing lockfile and dependencies. These commands use the project's local Turbo installation.
+
+#### Step 4: Create local configuration
+
 ```powershell
-cd frontend
-npm install
-cd ..
+.\.venv\Scripts\python.exe scripts/setup_local_env.py
 ```
 
-#### Step 4: Configure Environment Files
-The repository includes pre-configured `.env` and `frontend/.env.local` files for local execution. If creating them from scratch:
+The helper creates missing `.env` and `frontend/.env.local` files. The backend receives independent random encryption and JWT keys; the frontend points to `http://127.0.0.1:8000`. Existing files are preserved byte for byte, and keys are not printed. Keep the existing `.env` when retaining stored scans so they remain decryptable. Both environment files are ignored by Git.
 
-**Root `.env` (Backend):**
-```ini
-APP_ENV=development
-JWT_SECRET_KEY=insecure-dev-jwt-secret-key-replace-in-production-32bytes
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-IMAGE_ENCRYPTION_KEY=MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=
-SECURE_STORAGE_DIR=secure_data/encrypted_images
-METADATA_DB_PATH=secure_data/metadata.db
-MODEL_CHECKPOINT_PATH=models/densenet121_pneumonia_best.pth
-MAX_IMAGE_SIZE_BYTES=20971520
-CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
-SEED_DEMO_USERS=true
-ENABLE_DOCS=true
+Confirm that the trained checkpoint exists:
+
+```powershell
+Test-Path .\models\densenet121_pneumonia_best.pth
 ```
 
-**Frontend `.env.local`:**
-```ini
-NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
+If this returns `False`, obtain the trained checkpoint from the project owner and place it at that path, or configure `MODEL_CHECKPOINT_PATH` in `.env`. The checkpoint is needed to start the API. The training dataset is not needed to run the web app.
+
+#### Step 5: Verify setup without starting servers
+
+```powershell
+npm.cmd run dev:check
 ```
 
----
+This checks configuration files, backend imports, key formats, and the checkpoint path. It does not start a server, load model weights, or initialize the application database.
+
 
 ### 10.3 Launching the Local Services
 
-To run PulmoScan, start the backend and frontend in separate PowerShell terminals:
 
-#### Terminal 1: Start FastAPI Backend Server
+Run this manually from the project root:
+
 ```powershell
-cd "C:\Users\VIVEK\Desktop\ISC Project"
-.\.venv\Scripts\python.exe -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000 --reload
+npm.cmd run dev
 ```
-*Expected output: `Application startup complete. Uvicorn running on http://127.0.0.1:8000`*
 
-#### Terminal 2: Start Next.js Frontend Development Server
-```powershell
-cd "C:\Users\VIVEK\Desktop\ISC Project\frontend"
-npm run dev
-```
-*Expected output: `Ready in ...ms - Local: http://localhost:3000`*
+Turborepo runs the setup check once, then starts FastAPI and Next.js concurrently with labelled logs in the same terminal. FastAPI reloads when files in `src/` change; Next.js provides its normal development refresh. Press **Ctrl+C** in this terminal to stop both.
 
----
+| Service | URL |
+|---|---|
+| Staff login | http://localhost:3000/login/staff |
+| Radiologist login | http://localhost:3000/login/radiologist |
+| Backend readiness | http://127.0.0.1:8000/health/ready |
+| API documentation | http://127.0.0.1:8000/docs |
+
+Use `doctor1` / `DoctorPassword123!` at Staff Login, or `radiologist1` / `RadioPassword123!` at Radiologist Login. Enter credentials manually. The last portal is remembered; credentials and access tokens are not persisted by the app.
+
+
+
+| Command from project root | Action |
+|---|---|
+| `npm.cmd run dev` | Check setup, then run both services |
+| `npm.cmd run dev:check` | Validate setup without starting services |
+| `npm.cmd run dev:plan` | Print Turbo's task plan without executing tasks |
+| `npm.cmd run dev:frontend` | Start only the frontend |
+| `npm.cmd run dev:backend` | Start only the backend using `.venv` |
+
+Both service tasks depend on the same setup check. They are persistent and uncached. `--env-mode=loose` preserves environment overrides already set in the terminal, while each app loads its own local environment file. This uses [Turborepo's single-package task orchestration](https://turborepo.dev/docs/guides/single-package-workspaces); the source folders retain their existing structure. Turborepo coordinates processes; Next.js's Turbopack compiles the frontend.
+
 
 ### 10.4 Verifying Service Health & Interactive Docs
 
-Once launched, verify service health using PowerShell:
+After you manually start the services, check:
 
 ```powershell
-# 1. Test Backend Liveness
-Invoke-RestMethod -Uri http://127.0.0.1:8000/health
-
-# 2. Test Backend Readiness (DB, Storage, Model)
-Invoke-RestMethod -Uri http://127.0.0.1:8000/health/ready
+Invoke-RestMethod http://127.0.0.1:8000/health
+Invoke-RestMethod http://127.0.0.1:8000/health/ready
 ```
 
-Open interactive Swagger documentation in your browser:
-- **Swagger UI:** `http://127.0.0.1:8000/docs`
-
----
+Wait for `Application startup complete` and a `ready` response before signing in. API documentation is at `http://127.0.0.1:8000/docs`.
 
 ### 10.5 Running Automated Test Suites
 
-Verify system integrity by running both backend and frontend test suites:
+These checks do not start development servers:
 
 ```powershell
-# Run all 47 backend tests (pytest)
-.\.venv\Scripts\python.exe -m pytest tests/ -v
-
-# Run live end-to-end integration verification (requires backend running)
-.\.venv\Scripts\python.exe tests/e2e_live_verification.py
-
-# Run all 26 frontend tests (vitest)
-cd frontend
-npm run test
-cd ..
+.\.venv\Scripts\python.exe -m pytest tests/test_dev_setup.py -v
+npm.cmd --prefix frontend test
+npm.cmd --prefix frontend run lint
 ```
 
----
+The full backend suite is `.\.venv\Scripts\python.exe -m pytest tests/ -v`. Live end-to-end verification requires an already running backend: `.\.venv\Scripts\python.exe tests/e2e_live_verification.py`.
 
 ### 10.6 Graceful Shutdown
 
-To stop the development servers:
-- Press `Ctrl + C` in Terminal 1 (Uvicorn backend).
-- Press `Ctrl + C` in Terminal 2 (Next.js frontend).
+Press **Ctrl+C** in the terminal running `npm.cmd run dev` to stop both services. When running them separately, stop each service in its own terminal.
 
 ---
 

@@ -1,0 +1,9 @@
+# Compatible baseline used for this Windows development setup.
+# Install the CPU torch/torchvision wheels first as shown in README.md.
+# These constraints are optional for deployments using other PyTorch builds.
+torch==2.5.1
+torchvision==0.20.1
+fastapi==0.115.12
+pydantic==2.10.6
+pydantic-core==2.27.2
+starlette==0.46.2
