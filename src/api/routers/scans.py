@@ -16,7 +16,7 @@ Security & Authorization Constraints:
 """
 
 import io
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Literal
 from PIL import Image
 
 from fastapi import (
@@ -44,6 +44,7 @@ from src.api.dependencies import (
     require_role,
 )
 from src.api.model_service import DenseNetInferenceEngine, InvalidImagePayloadError
+from src.explainability import ExplanationMismatch
 from src.api.rate_limiter import rate_limit_inference
 from src.security.database import MetadataDB, validate_patient_id, validate_scan_id
 from src.security.exceptions import (
@@ -97,6 +98,33 @@ class PredictionResponse(BaseModel):
 class PatientIdentifierUpdate(BaseModel):
     model_config = ConfigDict(extra='forbid')
     patient_id: str = Field(..., min_length=3, max_length=64)
+
+
+class ExplanationRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    target_class: Literal['NORMAL', 'PNEUMONIA']
+    model_checkpoint_sha256: str = Field(..., pattern=r'^[0-9a-f]{64}$')
+
+
+class ExplanationResponse(BaseModel):
+    scan_id: str
+    method: str
+    target_layer: str
+    target_class: str
+    target_score: str
+    target_logit: float
+    pneumonia_probability: float
+    model_checkpoint_sha256: str
+    image_sha256: str
+    device: str
+    precision: str
+    preprocessing: str
+    status: Literal['available', 'no_spatial_signal']
+    heatmap_png_base64: str
+    content_box: List[int]
+    width: int
+    height: int
+    limitation: str
 
 
 # =====================================================================
@@ -256,6 +284,31 @@ def view_scan_image(scan_id: str,
     return Response(raw, media_type=media_type, headers={
         'Cache-Control': 'no-store, private', 'Pragma': 'no-cache',
         'Content-Disposition': 'inline', 'X-Content-Type-Options': 'nosniff'})
+
+
+@router.post('/{scan_id}/explain', response_model=ExplanationResponse)
+def explain_scan(scan_id: str, request: ExplanationRequest, response: Response,
+                 user: Dict[str, Any] = Depends(require_role('doctor', 'radiologist', 'admin')),
+                 db: MetadataDB = Depends(get_db), storage: SecureImageStorage = Depends(get_storage),
+                 engine: DenseNetInferenceEngine = Depends(get_inference_engine),
+                 _rate_limit: None = Depends(rate_limit_inference)) -> ExplanationResponse:
+    record = get_scan(scan_id, user, db)  # Authorize before decrypting or computing.
+    try:
+        raw, _ = storage.retrieve_image(record.scan_id)
+        result = engine.explain(raw, request.target_class, request.model_checkpoint_sha256)
+    except (AuthenticationError, IntegrityVerificationError):
+        raise HTTPException(status_code=409, detail='Stored image failed integrity verification.') from None
+    except ExplanationMismatch as error:
+        raise HTTPException(status_code=409, detail=str(error)) from None
+    except InvalidImagePayloadError:
+        raise HTTPException(status_code=422, detail='The stored image cannot be explained.') from None
+    except StorageError:
+        raise HTTPException(status_code=503, detail='Stored image is unavailable.') from None
+    except Exception:
+        raise HTTPException(status_code=503, detail='Explanation could not be generated. Screening results are unchanged.') from None
+    response.headers['Cache-Control'] = 'no-store, private'
+    response.headers['Pragma'] = 'no-cache'
+    return ExplanationResponse(scan_id=record.scan_id, **result)
 
 
 @router.post("/{scan_id}/predict", response_model=PredictionResponse)

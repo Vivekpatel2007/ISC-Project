@@ -34,6 +34,7 @@ from torchvision import models
 from src.compute import device_preference, select_device
 from src.modeling import image_transforms
 from src.scoring import binary_score_details
+from src.explainability import aligned_heatmap, densenet_gradcam, ExplanationMismatch, LAYER, LIMITATION
 
 from src.api.config import (
     ALLOWED_IMAGE_FORMATS,
@@ -254,3 +255,23 @@ class DenseNetInferenceEngine:
             "device": str(self.device),
             "disclaimer": DISCLAIMER_TEXT
         }
+
+    def explain(self, image_bytes: bytes, target_class: str, expected_checkpoint_sha256: str) -> Dict[str, Any]:
+        """Explain one fresh decision without updating the model or stored scan result."""
+        if expected_checkpoint_sha256 != self.checkpoint_sha256:
+            raise ExplanationMismatch('The active model has changed. Run screening again before explaining.')
+        if target_class not in self.class_names:
+            raise ValueError('Unsupported explanation target.')
+        with self._prediction_lock:
+            image = self.validate_and_decode_image(image_bytes)
+            inputs = self.transform(image).unsqueeze(0).to(self.device)
+            target_index = self.class_to_idx[target_class]
+            cam, logits, probabilities = densenet_gradcam(self.model, inputs, target_index, self.threshold)
+            overlay = aligned_heatmap(cam, image, self.image_size, self.preprocessing['resize_mode'])
+        return dict(**overlay, method='Grad-CAM', target_layer=LAYER, target_class=target_class,
+                    target_score='raw_class_logit', target_logit=float(logits[0, target_index].cpu()),
+                    pneumonia_probability=float(probabilities[0, 1].cpu()),
+                    model_checkpoint_sha256=self.checkpoint_sha256,
+                    image_sha256=hashlib.sha256(image_bytes).hexdigest(), device=str(self.device),
+                    precision='float16_autocast' if self.device.type == 'cuda' else 'float32',
+                    preprocessing=self.preprocessing['resize_mode'], limitation=LIMITATION)

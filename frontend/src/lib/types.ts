@@ -64,6 +64,27 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface ExplanationResult {
+  scan_id: string;
+  method: 'Grad-CAM';
+  target_class: 'NORMAL' | 'PNEUMONIA';
+  target_layer: string;
+  target_score: 'raw_class_logit';
+  target_logit: number;
+  pneumonia_probability: number;
+  model_checkpoint_sha256: string;
+  image_sha256: string;
+  device: string;
+  precision: string;
+  preprocessing: string;
+  status: 'available' | 'no_spatial_signal';
+  heatmap_png_base64: string;
+  content_box: number[];
+  width: number;
+  height: number;
+  limitation: string;
+}
+
 export interface ReadinessStatus {
   status: string;
   components?: Record<string, string>;

@@ -14,6 +14,7 @@ import {
   ApiError,
   type PredictionResult,
   type ScanMetadata,
+  type ExplanationResult,
 } from "@/lib/types";
 import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
 import {
@@ -41,6 +42,11 @@ function ScanDetailContent({ id }: { id: string }) {
   const [predicting, setPredicting] = useState(false);
   const [predictionError, setPredictionError] = useState<string | null>(null);
   const [metadataWarning, setMetadataWarning] = useState(false);
+  const [explanation, setExplanation] = useState<ExplanationResult | null>(null);
+  const [explaining, setExplaining] = useState(false);
+  const [explanationError, setExplanationError] = useState<string | null>(null);
+  const explanationRequest = useRef<AbortController | null>(null);
+  const explanationBusy = useRef(false);
   const busy = useRef(false);
   const generation = useRef(0);
   useEffect(() => {
@@ -66,18 +72,23 @@ function ScanDetailContent({ id }: { id: string }) {
       active = false;
       generation.current += 1;
       busy.current = false;
+      explanationBusy.current = false;
+      explanationRequest.current?.abort();
       setPredicting(false);
+      setExplaining(false);
     };
   }, [id, token, revision]);
   const scan =
     record?.id === id && record.revision === revision ? record.scan : null;
   const output = prediction?.scan_id === id ? prediction : null;
   const run = async () => {
-    if (!token || busy.current) return;
+    if (!token || busy.current || explanationBusy.current) return;
     busy.current = true;
     setPredicting(true);
     setPredictionError(null);
     setMetadataWarning(false);
+    setExplanation(null);
+    setExplanationError(null);
     const current = generation.current;
     try {
       const result = await apiClient.predictScan(id, token);
@@ -105,6 +116,30 @@ function ScanDetailContent({ id }: { id: string }) {
       if (generation.current === current) {
         busy.current = false;
         setPredicting(false);
+      }
+    }
+  };
+  const explain = async () => {
+    if (!token || !output?.model_checkpoint_sha256 || busy.current || explanationBusy.current) return;
+    explanationBusy.current = true;
+    setExplaining(true);
+    setExplanationError(null);
+    const current = generation.current;
+    const abort = new AbortController();
+    explanationRequest.current = abort;
+    try {
+      const result = await apiClient.explainScan(id, output.prediction, output.model_checkpoint_sha256, token, abort.signal);
+      if (generation.current !== current || abort.signal.aborted) return;
+      if (result.scan_id !== id || result.target_class !== output.prediction || result.model_checkpoint_sha256 !== output.model_checkpoint_sha256) {
+        throw new Error('Explanation identity did not match this screening result. Re-run screening before trying again.');
+      }
+      setExplanation(result);
+    } catch (error) {
+      if (generation.current === current && !abort.signal.aborted) setExplanationError(error instanceof Error ? error.message : 'Explanation could not be generated.');
+    } finally {
+      if (generation.current === current && !abort.signal.aborted) {
+        explanationBusy.current = false;
+        setExplaining(false);
       }
     }
   };
@@ -137,10 +172,11 @@ function ScanDetailContent({ id }: { id: string }) {
               <div className="scan-review-grid">
                 <div className="scan-review-screening">
                   <ScreeningPanel scan={scan} output={output} predicting={predicting}
-                    error={predictionError} metadataWarning={metadataWarning} onRun={run} />
+                    error={predictionError} metadataWarning={metadataWarning} onRun={run}
+                    onExplain={explain} explaining={explaining} explanationReady={!!explanation} explanationError={explanationError} />
                 </div>
-                <div className="scan-review-image">
-                  {token && <StoredRadiograph key={`${id}:${token}`} scanId={id} token={token} patientId={scan.patient_id} />}
+                <div className="scan-review-image" id="radiograph-image" tabIndex={-1}>
+                  {token && <StoredRadiograph key={`${id}:${token}`} scanId={id} token={token} patientId={scan.patient_id} explanation={explanation} />}
                 </div>
               </div>
               <section className="panel panel-padding" aria-label="Scan information and patient records">
@@ -158,7 +194,7 @@ function ScanDetailContent({ id }: { id: string }) {
                 {token && <details className="review-disclosure patient-management">
                   <summary>Follow-up & patient records</summary>
                   <p className="muted text-sm mt-4 mb-4">For a new examination, add a follow-up X-ray. Earlier images and screening results stay in the patient history.</p>
-                  <fieldset className="patient-action-fieldset" disabled={predicting}>
+                  <fieldset className="patient-action-fieldset" disabled={predicting || explaining}>
                     <legend className="sr-only">Patient record actions</legend>
                     <PatientActions key={scan.patient_id} patientId={scan.patient_id} token={token}
                       onRenamed={() => setRevision((v) => v + 1)} onDeleted={() => router.push('/patients')} />

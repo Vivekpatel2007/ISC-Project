@@ -924,7 +924,17 @@ h3 {
 .patient-history a { color: var(--accent); }
 .radiograph-preview { display: block; position: relative; width: 100%; border: 0; padding: 0; background: #070e12; color: #fff; overflow: hidden; }
 .radiograph-preview img { display: block; width: 100%; height: clamp(300px, 42vh, 500px); object-fit: contain; }
-.radiograph-preview > span { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; background: #13272d; font-size: 0.9375rem; }
+.radiograph-preview > span:last-child { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; background: #13272d; font-size: 0.9375rem; }
+.radiograph-stack, .viewer-image-stack { display: block; position: relative; background: #070e12; }
+.radiograph-stack .heatmap-overlay, .viewer-image-stack .heatmap-overlay { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.viewer-image-stack > img { width: 100%; height: 100%; object-fit: contain; }
+.overlay-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 12px 18px; border-top: 1px solid var(--line); background: var(--surface); }
+.overlay-opacity { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: 0.875rem; }
+.overlay-opacity input { width: 110px; accent-color: var(--accent); }
+.heatmap-legend { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 0.8125rem; color: var(--muted); flex-wrap: wrap; }
+.heatmap-legend-gradient { flex: 1; min-width: 65px; max-width: 160px; height: 12px; border-radius: 4px; background: linear-gradient(to right, #ffe146, #ff7023, #ff0000); }
+.explanation-caption { border-top: 1px solid var(--line); }
+.explanation-action { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
 .radiograph-dialog { width: min(1200px, 96vw); max-width: 96vw; max-height: 96dvh; padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); }
 .radiograph-dialog::backdrop { background: #000c; }
 .viewer-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; }

@@ -13,6 +13,7 @@ import {
   UserProfile,
   AccountUpdate,
   AccountUpdateResponse,
+  ExplanationResult,
 } from './types';
 
 export const API_BASE_URL =
@@ -99,6 +100,12 @@ async function request<T>(
 }
 
 export const apiClient = {
+  async explainScan(scanId: string, targetClass: string, checkpoint: string, token: string, signal?: AbortSignal): Promise<ExplanationResult> {
+    return request<ExplanationResult>(`/scans/${encodeURIComponent(scanId)}/explain`, {
+      method: 'POST', cache: 'no-store', signal,
+      body: JSON.stringify({target_class: targetClass, model_checkpoint_sha256: checkpoint}),
+    }, token);
+  },
   async renamePatient(patientId: string, newId: string, token: string): Promise<{patient_id: string; updated_scans: number}> {
     return request(`/patients/${encodeURIComponent(patientId)}`, {method: 'PUT', body: JSON.stringify({patient_id: newId})}, token);
   },

@@ -17,6 +17,7 @@ Patients do **not** have login accounts. A patient record is a group of accessib
 1. Choose **Upload radiograph**, select a PNG/JPEG, and enter a pseudonymous patient ID. Uploading creates the first patient scan with status **Pending**.
 2. Open the scan. The protected image preview can be enlarged by clicking it. The viewer supports zoom, fit-to-view, scrolling, a close button, and Escape. The viewer adds no medical annotations.
 3. Click **Run AI screening** to obtain the actual backend model output.
+   - Optionally click **Explain prediction** for a Grad-CAM heatmap, then use Original/Heatmap, opacity, and zoom. See [the explanation guide](EXPLAINABILITY.md) for limits and verification. It does not establish disease locations or diagnostic certainty.
    - Screening controls and results sit beside the X-ray on wider screens and first on smaller screens. There is one primary screening button. Follow-up and record-management actions are below, under **Follow-up & patient records**; scan metadata and model details also expand on request.
 4. Open **Patients** to see one entry per accessible patient ID. The **newest upload** supplies the current screening status. A new, unscreened upload is pending even if an earlier scan was screened.
 5. Use **Add follow-up X-ray** to upload another image under the same ID. The new scan opens; run screening there. If its output is `NORMAL`, the patient list displays **Normal** under **Latest AI output**. Previous pneumonia outputs remain in the expandable X-ray history.

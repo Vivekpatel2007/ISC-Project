@@ -1,17 +1,21 @@
 "use client";
 
-import { AlertTriangle, Info, LoaderCircle, ScanLine } from "lucide-react";
+import { AlertTriangle, Info, LoaderCircle, ScanLine, Eye } from "lucide-react";
 import { ErrorState, ResultBadge } from "@/components/ui";
 import { formatModelScore } from "@/lib/utils";
 import type { PredictionResult, ScanMetadata } from "@/lib/types";
 
-export function ScreeningPanel({ scan, output, predicting, error, metadataWarning, onRun }: {
+export function ScreeningPanel({ scan, output, predicting, error, metadataWarning, onRun, onExplain, explaining = false, explanationReady = false, explanationError }: {
   scan: ScanMetadata;
   output: PredictionResult | null;
   predicting: boolean;
   error: string | null;
   metadataWarning: boolean;
   onRun: () => void;
+  onExplain?: () => void;
+  explaining?: boolean;
+  explanationReady?: boolean;
+  explanationError?: string | null;
 }) {
   const saved = !output && !error && !predicting && scan.prediction_status === "PROCESSED";
   return (
@@ -20,7 +24,7 @@ export function ScreeningPanel({ scan, output, predicting, error, metadataWarnin
         <span className="screening-icon"><ScanLine size={23} /></span>
         <div><p className="eyebrow">AI-assisted review</p><h2 id="screening-heading">AI screening</h2></div>
       </div>
-      <button className="button button-primary screening-run" disabled={predicting} onClick={onRun}>
+      <button className="button button-primary screening-run" disabled={predicting || explaining} onClick={onRun}>
         {predicting ? <LoaderCircle size={18} className="spin" /> : <ScanLine size={18} />}
         {predicting ? "Running AI screening..." : error ? "Retry AI screening" : output || saved ? "Re-run AI screening" : "Run AI Screening"}
       </button>
@@ -42,6 +46,16 @@ export function ScreeningPanel({ scan, output, predicting, error, metadataWarnin
             <span style={{width: `${Math.min(100, Math.max(0, value * 100))}%`}} />
           </div>
         </div>)}
+        {onExplain && <div className="explanation-action">
+          <button type="button" className="button button-secondary w-full" disabled={explaining || explanationReady || !output.model_checkpoint_sha256} onClick={onExplain}>
+            {explaining ? <LoaderCircle size={18} className="spin" /> : <Eye size={18} />}
+            {explaining ? 'Generating explanation…' : explanationReady ? 'Explanation ready' : 'Explain prediction'}
+          </button>
+          <p className="field-help">{output.model_checkpoint_sha256 ? 'Optional Grad-CAM view of regions contributing to this class score. The screening result stays unchanged.' : 'Restart the backend and re-run screening to identify the model before requesting an explanation.'}</p>
+          {explanationReady && <a href="#radiograph-image" className="text-link mt-3">View explanation on X-ray</a>}
+          {explaining && <p role="status" className="muted text-sm mt-3">Generating the heatmap. It will appear over the X-ray.</p>}
+          {explanationError && <p role="alert" className="notice notice-warning mt-3">{explanationError}</p>}
+        </div>}
         <details className="review-disclosure"><summary>Model & screening details</summary><dl className="detail-grid mt-4">
           <div className="detail-item"><dt>Decision Threshold:</dt><dd>{output.threshold_applied}</dd></div>
           <div className="detail-item"><dt>Compute</dt><dd>{output.device.toUpperCase()}</dd></div>

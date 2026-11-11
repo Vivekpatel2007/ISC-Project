@@ -150,3 +150,52 @@ def test_failed_file_delete_does_not_silently_remove_metadata(workspace, monkeyp
     with pytest.raises(StorageError, match='retained'):
         storage.delete_scan(scan['scan_id'])
     assert db.get_scan(scan['scan_id'])
+
+
+def test_explanation_is_protected_uncached_and_does_not_update_scan_results(workspace):
+    import base64
+    import hashlib
+    client, db, storage, login, image = workspace
+    scan = storage.store_image(image, 'PAT-001', uploaded_by='doctor_a')
+    db.update_prediction(scan['scan_id'], 'PNEUMONIA', .9)
+    before = db.get_scan(scan['scan_id'])
+    result = dict(method='Grad-CAM', target_layer='features.denseblock4', target_class='PNEUMONIA',
+                  target_score='raw_class_logit', target_logit=2., pneumonia_probability=.9,
+                  model_checkpoint_sha256='a' * 64, image_sha256=hashlib.sha256(image).hexdigest(),
+                  device='cpu', precision='float32', preprocessing='stretch', status='available',
+                  heatmap_png_base64=base64.b64encode(image).decode(), content_box=[0, 0, 224, 224],
+                  width=100, height=100, limitation='Model contribution, not a disease outline.')
+    engine = SimpleNamespace(explain=Mock(return_value=result))
+    client.app.dependency_overrides[get_inference_engine] = lambda: engine
+    route = f"/scans/{scan['scan_id']}/explain"
+    body = dict(target_class='PNEUMONIA', model_checkpoint_sha256='a' * 64)
+    assert client.post(route, json=body).status_code == 401
+    assert client.post(route, headers=login('doctor_b'), json=body).status_code == 403
+    engine.explain.assert_not_called()
+    response = client.post(route, headers=login(), json=body)
+    assert response.status_code == 200, response.text
+    assert response.json()['scan_id'] == scan['scan_id']
+    assert 'no-store' in response.headers['cache-control']
+    engine.explain.assert_called_once_with(image, 'PNEUMONIA', 'a' * 64)
+    assert db.get_scan(scan['scan_id']) == before
+    assert client.post(route, headers=login('radio_a'), json=body).status_code == 200
+
+
+def test_explanation_rejects_tampered_images_and_changed_model(workspace):
+    from src.explainability import ExplanationMismatch
+    client, _, storage, login, image = workspace
+    scan = storage.store_image(image, 'PAT-001', uploaded_by='doctor_a')
+    engine = SimpleNamespace(explain=Mock(side_effect=ExplanationMismatch('Run screening again.')))
+    client.app.dependency_overrides[get_inference_engine] = lambda: engine
+    route = f"/scans/{scan['scan_id']}/explain"
+    token = login()
+    body = dict(target_class='PNEUMONIA', model_checkpoint_sha256='a' * 64)
+    response = client.post(route, headers=token, json=body)
+    assert response.status_code == 409 and 'screening again' in response.text
+    engine.explain.reset_mock()
+    path = storage._get_encrypted_file_path(scan['scan_id'])
+    raw = bytearray(path.read_bytes()); raw[-1] ^= 1; path.write_bytes(raw)
+    assert client.post(route, headers=token, json=body).status_code == 409
+    engine.explain.assert_not_called()
+    assert client.post(route, headers=token, json={**body, 'model_checkpoint_sha256':'invalid'}).status_code == 422
+    assert client.post(route, headers=token, json={**body, 'target_class':'DIAGNOSIS'}).status_code == 422

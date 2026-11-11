@@ -78,9 +78,9 @@ describe('Protected radiograph viewer', () => {
     const modal = screen.getByRole('dialog');
     expect(modal).toHaveAttribute('open');
     fireEvent.click(screen.getByRole('button', {name: 'Zoom in'}));
-    expect(screen.getByAltText('Test radiograph, enlarged')).toHaveStyle({width: '125%'});
+    expect(screen.getByAltText('Test radiograph, enlarged').parentElement).toHaveStyle({width: '125%'});
     fireEvent.click(screen.getByRole('button', {name: 'Fit image'}));
-    expect(screen.getByAltText('Test radiograph, enlarged')).toHaveStyle({width: '100%'});
+    expect(screen.getByAltText('Test radiograph, enlarged').parentElement).toHaveStyle({width: '100%'});
     fireEvent.click(screen.getByRole('button', {name: 'Close enlarged image'}));
     expect(modal).not.toHaveAttribute('open');
     expect(document.body.style.overflow).not.toBe('hidden');
