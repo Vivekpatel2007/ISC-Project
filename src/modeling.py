@@ -1,6 +1,7 @@
 """Shared preprocessing and small ImageNet-pretrained experiment backbones."""
 
 import hashlib
+import io
 from pathlib import Path
 import re
 from urllib.parse import urlsplit
@@ -27,9 +28,30 @@ class Letterbox:
         return canvas
 
 
-def image_transforms(size=224, normalization=None, resize_mode='letterbox', training=False):
+class RandomJPEGCompression:
+    """Training-only compression variation; a robustness hypothesis, not a clinical correction."""
+
+    def __init__(self, probability=0.75, quality=(40, 95)):
+        self.probability, self.quality = probability, quality
+
+    def __call__(self, image):
+        if float(torch.rand(())) >= self.probability:
+            return image
+        quality = int(torch.randint(self.quality[0], self.quality[1] + 1, ()))
+        buffer = io.BytesIO()
+        image.save(buffer, format='JPEG', quality=quality)
+        buffer.seek(0)
+        with Image.open(buffer) as decoded:
+            decoded.load()
+            return decoded.convert(image.mode)
+
+
+def image_transforms(size=224, normalization=None, resize_mode='letterbox', training=False,
+                     augmentation_profile='standard'):
     if resize_mode not in {'letterbox', 'stretch'}:
         raise ValueError('resize_mode must be letterbox or stretch.')
+    if augmentation_profile not in {'standard', 'jpeg_robustness'}:
+        raise ValueError('Unknown training augmentation profile.')
     norm = normalization or NORMALIZATION
     operations = [transforms.Grayscale(num_output_channels=3),
                   Letterbox(size) if resize_mode == 'letterbox' else transforms.Resize((size, size))]
@@ -39,6 +61,8 @@ def image_transforms(size=224, normalization=None, resize_mode='letterbox', trai
                                     interpolation=InterpolationMode.BILINEAR, fill=0),
             transforms.ColorJitter(brightness=0.08, contrast=0.08),
         ])
+        if augmentation_profile == 'jpeg_robustness':
+            operations.append(RandomJPEGCompression())
     operations.extend([transforms.ToTensor(), transforms.Normalize(norm['mean'], norm['std'])])
     return transforms.Compose(operations)
 

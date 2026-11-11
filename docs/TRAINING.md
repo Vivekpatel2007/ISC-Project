@@ -1,5 +1,7 @@
 # Local training and preprocessing
 
+Current postprocessing and validation status is documented in **[CALIBRATION_AND_EXTERNAL_VALIDATION.md](CALIBRATION_AND_EXTERNAL_VALIDATION.md)**. The completed v2 experiment is described in [TRAINING_V2.md](TRAINING_V2.md), preserving the v1 results and profiles below. See [the model review](MODEL_REVIEW_2026-11-10.md) for the original validation/test gap and metadata evidence.
+
 ## Run this in your terminal
 
 **Current laptop status, 10 November 2026:** after the fresh restart, training stopped during epoch 3 because `train/PNEUMONIA/person1411_bacteria_3610.jpeg` no longer matched its prepared checksum. Two subsequent full integrity passes confirmed that mismatch. The underlying cause is unknown. The source and manifest have not been changed to bypass it; use the [standalone Kaggle notebook](../kaggle/README.md) for the requested cloud training workflow. The local code remains usable with verified sources and automatic GPU/CPU selection, and reports integrity failures with expected/actual hashes and a nonzero exit status. This is not a claim that repository changes repair the device.

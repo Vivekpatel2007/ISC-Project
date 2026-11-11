@@ -27,7 +27,8 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 from src.api.auth import hash_password
-from src.api.dependencies import get_db, get_inference_engine, get_storage
+from src.api.dependencies import (get_db, get_inference_engine, get_storage,
+                                 get_initialized_db, get_initialized_storage, get_initialized_inference_engine)
 from src.api.main import create_app
 from src.api.model_service import DenseNetInferenceEngine
 from src.security import (
@@ -103,6 +104,9 @@ def api_test_env(shared_inference_engine):
         app.dependency_overrides[get_db] = lambda: db
         app.dependency_overrides[get_storage] = lambda: storage
         app.dependency_overrides[get_inference_engine] = lambda: shared_inference_engine
+        app.dependency_overrides[get_initialized_db] = lambda: db
+        app.dependency_overrides[get_initialized_storage] = lambda: storage
+        app.dependency_overrides[get_initialized_inference_engine] = lambda: shared_inference_engine
 
         client = TestClient(app)
 

@@ -1,5 +1,13 @@
 # Train on Kaggle, run the app locally
 
+**Current status:** the v2 diagnostic results have been verified. The next scoring/calibration work can use the downloaded CSVs locally, without another Kaggle training run. See [calibration and external validation](../docs/CALIBRATION_AND_EXTERNAL_VALIDATION.md). Only the original dataset is available so far; independent validation remains pending.
+
+**Completed diagnostic reference:** [PulmoScan_Logit_Diagnostics.ipynb](PulmoScan_Logit_Diagnostics.ipynb) and [the diagnostic guide](../docs/LOGIT_DIAGNOSTICS.md) are retained to reproduce raw-logit ranking and saturation measurements. The returned diagnostic ZIP is already verified.
+
+**v2 training reference:** [PulmoScan_Training_v2.ipynb](PulmoScan_Training_v2.ipynb) and [the v2 instructions](../docs/TRAINING_V2.md) describe the completed threshold-holdout/JPEG experiment. The [model review](../docs/MODEL_REVIEW_2026-11-10.md) records the motivating evidence. Another run is not required for the current postprocessing work.
+
+## v1 reference workflow
+
 Upload **[PulmoScan_Training.ipynb](PulmoScan_Training.ipynb)** to Kaggle. It is self-contained: it embeds the current shared training sources and needs no project ZIP, private GitHub access, local images, `.env`, or API credentials. The other files in this folder maintain the notebook; you do not need to upload them separately.
 
 ## Start a training run

@@ -1,82 +1,72 @@
-"""
-Health & Readiness Router
-ISC Project: Secure Storage and Transmission of Medical Data
+"""Operational probes. Readiness never initializes services or attests model accuracy."""
 
-Endpoints:
-- GET /health: Liveness probe verifying the service process is up.
-- GET /health/ready: Readiness probe checking database connectivity, storage accessibility, and model loading.
-"""
-
-from typing import Any, Dict
+import logging
+from pathlib import Path
+import sqlite3
+from typing import Dict, Optional
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
-from src.api.dependencies import get_db, get_inference_engine, get_storage
+from src.api.config import API_VERSION
+from src.api.dependencies import get_initialized_db, get_initialized_inference_engine, get_initialized_storage
 from src.api.model_service import DenseNetInferenceEngine
 from src.security.database import MetadataDB
 from src.security.secure_storage import SecureImageStorage
 
-router = APIRouter(prefix="/health", tags=["Health & Readiness"])
+router = APIRouter(prefix='/health', tags=['Health & Readiness'])
+logger = logging.getLogger(__name__)
 
 
-@router.get("", status_code=status.HTTP_200_OK)
+@router.get('', status_code=status.HTTP_200_OK)
 def liveness() -> Dict[str, str]:
-    """
-    Liveness probe indicating the backend server is running.
-    """
-    return {
-        "status": "healthy",
-        "service": "pneumonia-detection-secure-api",
-        "version": "1.0.0"
-    }
+    return dict(status='healthy', service='pneumonia-detection-secure-api', version=API_VERSION)
 
 
-@router.get("/ready")
+@router.get('/ready')
 def readiness(
-    db: MetadataDB = Depends(get_db),
-    storage: SecureImageStorage = Depends(get_storage),
-    engine: DenseNetInferenceEngine = Depends(get_inference_engine)
+    db: Optional[MetadataDB] = Depends(get_initialized_db),
+    storage: Optional[SecureImageStorage] = Depends(get_initialized_storage),
+    engine: Optional[DenseNetInferenceEngine] = Depends(get_initialized_inference_engine),
 ) -> JSONResponse:
-    """
-    Readiness probe verifying operational health of database, storage, and ML engine.
-    """
-    checks = {
-        "database": False,
-        "storage": False,
-        "model": False
-    }
-
-    # 1. Check database
-    try:
-        with db._connection() as conn:
-            conn.execute("SELECT 1;").fetchone()
-        checks["database"] = True
-    except Exception:
-        checks["database"] = False
-
-    # 2. Check storage
-    try:
-        checks["storage"] = storage.storage_dir.exists()
-    except Exception:
-        checks["storage"] = False
-
-    # 3. Check model
-    try:
-        checks["model"] = engine.model is not None and engine.checkpoint_path.exists()
-    except Exception:
-        checks["model"] = False
-
-    all_ready = all(checks.values())
-    status_code = status.HTTP_200_OK if all_ready else status.HTTP_503_SERVICE_UNAVAILABLE
-
-    return JSONResponse(
-        status_code=status_code,
-        content={
-            "status": "ready" if all_ready else "unready",
-            "checks": checks,
-            "architecture": engine.class_names,
-            "threshold": engine.threshold,
-            "device": str(engine.device)
-        }
-    )
+    checks = dict(database=False, storage=False, model=False)
+    components = dict(database='not_initialized', storage='not_initialized', model='not_initialized')
+    model_info = None
+    if db is not None:
+        try:
+            # Read-only URI mode prevents a probe from recreating a deleted database.
+            connection = sqlite3.connect(Path(db.db_path).resolve().as_uri() + '?mode=ro', uri=True, timeout=1.)
+            try:
+                tables = {row[0] for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('scans','users')")}
+                checks['database'] = tables == {'scans', 'users'}
+            finally:
+                connection.close()
+        except Exception as error:
+            logger.debug('Database readiness failed (%s).', type(error).__name__)
+        components['database'] = 'ready' if checks['database'] else 'unavailable'
+    if storage is not None:
+        try:
+            checks['storage'] = Path(storage.storage_dir).is_dir()
+        except Exception as error:
+            logger.debug('Storage readiness failed (%s).', type(error).__name__)
+        components['storage'] = 'ready' if checks['storage'] else 'unavailable'
+    if engine is not None:
+        try:
+            if engine.model is not None and Path(engine.checkpoint_path).is_file():
+                model_info = engine.model_information()
+                if not isinstance(model_info, dict) or not {'architecture', 'class_names', 'threshold', 'device'} <= set(model_info):
+                    raise ValueError('Incomplete loaded-model metadata.')
+                checks['model'] = True
+        except Exception as error:
+            model_info = None
+            logger.debug('Model readiness failed (%s).', type(error).__name__)
+        components['model'] = 'ready' if checks['model'] else 'unavailable'
+    ready = all(checks.values())
+    return JSONResponse(status_code=200 if ready else 503, content=dict(
+        status='ready' if ready else 'unready', readiness_scope='operational_only',
+        checks=checks, components=components, model=model_info,
+        architecture=model_info['architecture'] if model_info else None,
+        class_names=model_info['class_names'] if model_info else None,
+        threshold=model_info['threshold'] if model_info else None,
+        device=model_info['device'] if model_info else None))

@@ -55,6 +55,29 @@ def test_notebook_embeds_current_sources_and_all_cells_compile(tmp_path, monkeyp
         exec(compile(source, '<bootstrap>', 'exec'), {})
 
 
+def test_v2_notebook_is_separate_and_explicit_about_repeated_benchmark():
+    notebook = build_notebook('v2')
+    assert notebook['metadata']['pulmoscan']['profile'] == 'v2'
+    code = []
+    markdown = []
+    for cell in notebook['cells']:
+        source = ''.join(cell['source'])
+        if cell['cell_type'] == 'code':
+            compile(source, '<v2 notebook>', 'exec')
+            code.append(source)
+        else:
+            markdown.append(source)
+    code = '\n'.join(code)
+    text = '\n'.join(markdown)
+    assert "WORKSPACE = Path('/kaggle/working/pulmoscan_training_v2')" in code
+    assert "PROFILE = 'v2'" in code and "'kaggle-v2-'" in code
+    assert 'profile=PROFILE' in code
+    assert 'RUN_FINAL_TEST = False' in code
+    assert '--allow-reviewed-benchmark' in code
+    assert 'not proof of its cause' in text
+    assert 'previously_reviewed_benchmark' in text
+
+
 def dataset_folders(root):
     for split in ('train', 'val', 'test'):
         for label in ('NORMAL', 'PNEUMONIA'):
@@ -97,6 +120,25 @@ def test_kaggle_prepare_audits_synthetic_sources_and_preserves_resume_identity(t
     with pytest.raises(DatasetIntegrityError, match='Expected SHA-256'):
         runtime.prepare(workspace, source)
     assert manifest.read_bytes() == original
+
+
+def test_v2_prepare_uses_four_disjoint_splits_in_its_own_manifest(tmp_path):
+    source = dataset_folders(tmp_path / 'input/chest_xray')
+    for target, label in enumerate(('NORMAL', 'PNEUMONIA')):
+        for index in range(20):
+            name = f'IM-{index:04d}-0001.jpeg' if target == 0 else f'person{index}_bacteria_1.jpeg'
+            Image.new('L', (32 + index, 32), 20 + target * 100 + index).save(source / 'train' / label / name)
+        name = 'IM-9999-0001.jpeg' if target == 0 else 'person9999_virus_1.jpeg'
+        Image.new('L', (33, 35), 70 + target * 100).save(source / 'test' / label / name)
+    workspace = tmp_path / 'v2-workspace'
+    (workspace / 'kaggle').mkdir(parents=True)
+    (workspace / 'kaggle/train_config_v2.json').write_bytes((ROOT / 'kaggle/train_config_v2.json').read_bytes())
+    config, manifest_path = runtime.prepare(workspace, source, profile='v2')
+    manifest = json.loads(manifest_path.read_text())
+    assert manifest_path == workspace / 'data/prepared/robustness-v2/manifest.json'
+    assert set(manifest['splits']) == {'train', 'val', 'calibration', 'test'}
+    assert json.loads(config.read_text())['threshold_split'] == 'calibration'
+    assert manifest['test_role'] == 'previously_reviewed_benchmark'
 
 
 def test_notebook_resume_skips_completed_and_routes_incomplete_candidates(tmp_path, monkeypatch):

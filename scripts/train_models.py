@@ -29,6 +29,12 @@ def read_config(path):
         raise ValueError('head_warmup_epochs must be a nonnegative integer.')
     if not math.isfinite(config['weight_decay']) or config['weight_decay'] < 0:
         raise ValueError('weight_decay must be finite and nonnegative.')
+    if config.get('threshold_split', 'val') not in {'val', 'calibration'}:
+        raise ValueError('threshold_split must be val or calibration.')
+    if config.get('augmentation_profile', 'standard') not in {'standard', 'jpeg_robustness'}:
+        raise ValueError('Unknown augmentation_profile.')
+    if config.get('ranking_score_space', 'probability') not in {'probability', 'logit_margin'}:
+        raise ValueError('ranking_score_space must be probability or logit_margin.')
     return config
 
 
@@ -66,10 +72,14 @@ def update_comparison(suite):
         return
     if len({row['manifest_sha256'] for row in summaries}) != 1:
         raise ValueError('Cannot compare experiments with different split manifests.')
+    spaces = {row.get('selection_metric', 'val_roc_auc') for row in summaries}
+    if len(spaces) != 1:
+        raise ValueError('Cannot compare probability-AUC and logit-margin-AUC selection scores in one suite.')
     ordered = sorted(summaries, key=lambda row: (-row['selection_metric_value'], row['validation_loss']))
     planned = json.loads((suite / 'suite_plan.json').read_text(encoding='utf-8'))['models']
     pending = sorted(set(planned) - {row['architecture'] for row in ordered})
-    write_json(dict(selection='Validation ROC-AUC; lower validation NLL breaks exact ties. No test selection.',
+    selection = ('Validation logit-margin ROC-AUC' if spaces == {'val_logit_margin_auc'} else 'Validation probability ROC-AUC')
+    write_json(dict(selection=selection + '; lower validation NLL breaks exact ties. No test selection.',
                     candidates=ordered, pending_candidates=pending,
                     recommended_checkpoint=ordered[0]['checkpoint'], test_evaluated=False),
                suite / 'comparison.json')
@@ -125,6 +135,8 @@ def main(argv=None):
     manifest_path = ROOT / config['manifest']
     print('Verifying source image hashes before loading models ...', flush=True)
     manifest, root = load_manifest(manifest_path, verify_files=True, progress=lambda value: print(value, flush=True))
+    if config.get('threshold_split', 'val') == 'calibration' and 'calibration' not in manifest['splits']:
+        raise ValueError('This profile requires a separate calibration split; prepare a new v2 manifest.')
     if args.check:
         preflight(config, names, manifest, root)
         return 0

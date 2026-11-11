@@ -16,11 +16,11 @@ import numpy as np
 from PIL import Image
 import torch
 from torch.utils.data import DataLoader, Dataset
-from sklearn.metrics import accuracy_score, balanced_accuracy_score, confusion_matrix, roc_auc_score
 
 from src.compute import select_device
 from src.data_protocol import CLASSES, ROOT, DatasetIntegrityError, read_verified_image
 from src.modeling import NORMALIZATION, build_classifier, image_transforms, set_training_stage
+from src.scoring import binary_score_details, metrics
 
 
 class ManifestDataset(Dataset):
@@ -39,19 +39,6 @@ class ManifestDataset(Dataset):
             image.load()
             rgb = image.convert('RGB')
         return self.transform(rgb), self.targets[index]
-
-
-def metrics(targets, scores, threshold=0.5):
-    truth, scores = np.asarray(targets), np.asarray(scores)
-    if set(truth.tolist()) != {0, 1} or not np.isfinite(scores).all():
-        raise ValueError('Evaluation requires both classes and finite scores.')
-    predictions = (scores >= threshold).astype(int)
-    tn, fp, fn, tp = (int(value) for value in confusion_matrix(truth, predictions, labels=[0, 1]).ravel())
-    return dict(accuracy=float(accuracy_score(truth, predictions)),
-                balanced_accuracy=float(balanced_accuracy_score(truth, predictions)),
-                roc_auc=float(roc_auc_score(truth, scores)),
-                sensitivity=tp / (tp + fn), specificity=tn / (tn + fp),
-                threshold=float(threshold), confusion_matrix=dict(TN=tn, FP=fp, FN=fn, TP=tp))
 
 
 def choose_threshold(targets, scores, min_sensitivity=0.95):
@@ -128,7 +115,7 @@ def make_logger(run_dir):
 
 def validate(model, loader, device, amp):
     model.eval()
-    targets, scores, total_loss = [], [], 0.0
+    targets, scores, margins, total_loss = [], [], [], 0.0
     with torch.inference_mode():
         for inputs, labels in loader:
             inputs, labels = inputs.to(device), labels.to(device)
@@ -139,7 +126,9 @@ def validate(model, loader, device, amp):
             total_loss += float(torch.nn.functional.cross_entropy(logits.float(), labels, reduction='sum'))
             targets.extend(labels.cpu().tolist())
             scores.extend(torch.softmax(logits.float(), dim=1)[:, 1].cpu().tolist())
-    return dict(loss=total_loss / len(targets), targets=targets, scores=scores, **metrics(targets, scores))
+            margins.extend(binary_score_details(logits)['logit_margins'].cpu().tolist())
+    return dict(loss=total_loss / len(targets), targets=targets, scores=scores, margins=margins,
+                roc_auc_logit_margin=metrics(targets, margins, 0.)['roc_auc'], **metrics(targets, scores))
 
 
 def train_epoch(model, loader, optimizer, scaler, device, weights, config, logger):
@@ -181,6 +170,8 @@ def train_epoch(model, loader, optimizer, scaler, device, weights, config, logge
 
 
 def train_candidate(name, config, manifest, root, run_dir, resume=None):
+    ranking_space = config.get('ranking_score_space', 'probability')
+    selection_metric = 'val_logit_margin_auc' if ranking_space == 'logit_margin' else 'val_roc_auc'
     if not resume:
         run_dir.mkdir(parents=True, exist_ok=False)
     logger = make_logger(run_dir)
@@ -194,14 +185,17 @@ def train_candidate(name, config, manifest, root, run_dir, resume=None):
     from importlib.metadata import version
     environment['packages'] = {package: version(package) for package in ('numpy', 'Pillow', 'scikit-learn')}
     code_root = Path(__file__).resolve().parent.parent
-    code_files = ('src/training.py', 'src/modeling.py', 'src/data_protocol.py', 'src/prepare_dataset.py', 'scripts/train_models.py')
+    code_files = ('src/training.py', 'src/modeling.py', 'src/scoring.py', 'src/data_protocol.py',
+                  'src/prepare_dataset.py', 'scripts/train_models.py')
+    environment['training_code_files'] = list(code_files)
     environment['training_code_sha256'] = hashlib.sha256(b'\0'.join(
         name.encode() + b'\0' + (code_root / name).read_bytes() for name in code_files)).hexdigest()
     amp = bool(config['mixed_precision'] and device.type == 'cuda')
     model = build_classifier(name, pretrained=resume is None).to(device)
     generator = torch.Generator().manual_seed(config['seed'])
     train_ds = ManifestDataset(manifest, root, 'train', image_transforms(
-        config['image_size'], resize_mode=config['resize_mode'], training=True))
+        config['image_size'], resize_mode=config['resize_mode'], training=True,
+        augmentation_profile=config.get('augmentation_profile', 'standard')))
     val_ds = ManifestDataset(manifest, root, 'val', image_transforms(
         config['image_size'], resize_mode=config['resize_mode']))
     train_loader = DataLoader(train_ds, batch_size=config['batch_size'], shuffle=True,
@@ -258,11 +252,11 @@ def train_candidate(name, config, manifest, root, run_dir, resume=None):
             validation = validate(model, val_loader, device, amp)
             scheduler.step()
             row = dict(epoch=epoch, training=training,
-                       validation={key: value for key, value in validation.items() if key not in {'targets', 'scores'}},
+                       validation={key: value for key, value in validation.items() if key not in {'targets', 'scores', 'margins'}},
                        seconds=round(time.perf_counter() - epoch_start, 2),
                        peak_vram_gib=torch.cuda.max_memory_allocated(device) / 1024**3 if device.type == 'cuda' else 0.0)
             history.append(row)
-            score = validation['roc_auc']
+            score = validation['roc_auc_logit_margin'] if ranking_space == 'logit_margin' else validation['roc_auc']
             improved = score > best or (score == best and best_val is not None and validation['loss'] < best_val['loss'])
             if score > stop_reference + config['early_stopping_min_delta']:
                 stop_reference, wait = score, 0
@@ -275,7 +269,7 @@ def train_candidate(name, config, manifest, root, run_dir, resume=None):
                                image_size=config['image_size'], normalization=NORMALIZATION,
                                preprocessing={'resize_mode': config['resize_mode']}, best_epoch=epoch,
                                threshold=0.5, threshold_source='provisional; experiment not finalized',
-                               selection_metric='val_roc_auc', selection_metric_value=score,
+                               selection_metric=selection_metric, selection_metric_value=score,
                                manifest_sha256=manifest['manifest_sha256'], training_config=config, environment=environment)
                 atomic_save(payload, run_dir / 'best.pt')
                 logger.info('New best validation AUC %.5f: best.pt', score)
@@ -307,21 +301,43 @@ def train_candidate(name, config, manifest, root, run_dir, resume=None):
         raise
     if best_val is None:
         raise ValueError('No completed validation checkpoint is available.')
-    selected = choose_threshold(best_val['targets'], best_val['scores'], config['validation_min_sensitivity'])
     checkpoint = torch.load(run_dir / 'best.pt', map_location='cpu', weights_only=True)
-    checkpoint.update(threshold=selected['threshold'], threshold_source='validation only; maximize balanced accuracy subject to sensitivity target',
+    threshold_split = config.get('threshold_split', 'val')
+    threshold_data = best_val
+    if threshold_split == 'calibration':
+        # No calibration inference occurs until model selection/early stopping have finished.
+        model.load_state_dict(checkpoint['model_state_dict'])
+        calibration_ds = ManifestDataset(manifest, root, 'calibration', image_transforms(
+            config['image_size'], resize_mode=config['resize_mode']))
+        calibration_loader = DataLoader(calibration_ds, batch_size=config['batch_size'], shuffle=False,
+                                        num_workers=0, pin_memory=device.type == 'cuda')
+        logger.info('Model selection finished. Reading %d separate threshold-calibration images once.', len(calibration_ds))
+        threshold_data = validate(model, calibration_loader, device, amp)
+    selected = choose_threshold(threshold_data['targets'], threshold_data['scores'], config['validation_min_sensitivity'])
+    validation_selected = metrics(best_val['targets'], best_val['scores'], selected['threshold'])
+    checkpoint.update(threshold=selected['threshold'], threshold_source=f'{threshold_split} only; maximize balanced accuracy subject to sensitivity target' if threshold_split == 'calibration' else 'validation only; maximize balanced accuracy subject to sensitivity target',
                       threshold_settings={'min_sensitivity': config['validation_min_sensitivity']},
-                      validation_metrics=selected, finalized=True)
+                      threshold_split=threshold_split, validation_metrics=validation_selected, finalized=True)
+    if threshold_split == 'calibration':
+        checkpoint['calibration_metrics'] = selected
     atomic_save(checkpoint, run_dir / 'best.pt')
-    summary = dict(architecture=name, best_epoch=best_epoch, selection_metric='val_roc_auc', selection_metric_value=best,
+    summary = dict(architecture=name, best_epoch=best_epoch, selection_metric=selection_metric, selection_metric_value=best,
                    validation_loss=best_val['loss'], validation_at_0_5=metrics(best_val['targets'], best_val['scores']),
-                   validation_at_selected_threshold=selected, manifest_sha256=manifest['manifest_sha256'],
+                   validation_at_selected_threshold=validation_selected, manifest_sha256=manifest['manifest_sha256'],
                    checkpoint=(run_dir / 'best.pt').relative_to(ROOT).as_posix(),
                    checkpoint_sha256=hashlib.sha256((run_dir / 'best.pt').read_bytes()).hexdigest(),
                    elapsed_seconds=round(time.perf_counter() - started, 2), test_evaluated=False)
-    write_json(dict(targets=best_val['targets'], scores=best_val['scores']), run_dir / 'validation_predictions.json')
+    summary['threshold_split'] = threshold_split
+    if threshold_split == 'calibration':
+        summary['calibration_at_selected_threshold'] = selected
+        write_json(dict(targets=threshold_data['targets'], scores=threshold_data['scores']), run_dir / 'calibration_predictions.json')
+        write_json(dict(metrics=selected, loss=threshold_data['loss'], manifest_sha256=manifest['manifest_sha256'],
+                        threshold_split='calibration', caveat='Threshold holdout only; no probability calibration or clinical validity established.'),
+                   run_dir / 'calibration_summary.json')
+    write_json(dict(targets=best_val['targets'], scores=best_val['scores'], logit_margins=best_val.get('margins')),
+               run_dir / 'validation_predictions.json')
     write_json(summary, run_dir / 'validation_summary.json')
-    logger.info('Finished: best epoch=%d | AUC=%.5f | validation threshold=%.5f | balanced acc=%.3f sensitivity=%.3f specificity=%.3f',
-                best_epoch, best, selected['threshold'], selected['balanced_accuracy'], selected['sensitivity'], selected['specificity'])
+    logger.info('Finished: best epoch=%d | validation AUC=%.5f | %s threshold=%.5f | threshold-holdout balanced acc=%.3f sensitivity=%.3f specificity=%.3f',
+                best_epoch, best, threshold_split, selected['threshold'], selected['balanced_accuracy'], selected['sensitivity'], selected['specificity'])
     logger.info('Test set remains unevaluated. Current API checkpoint has not changed.')
     return summary

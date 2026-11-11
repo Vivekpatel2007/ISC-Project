@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 load_dotenv(override=False)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+API_VERSION = '2.0.0'
 
 # Environment Mode
 APP_ENV = os.getenv("APP_ENV", os.getenv("ENVIRONMENT", "development")).lower()

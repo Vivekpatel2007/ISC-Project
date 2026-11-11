@@ -189,6 +189,8 @@ Use `npm.cmd run dev:frontend` or `npm.cmd run dev:backend` to launch one servic
 
 ### Automated Checks
 
+Backend initialization, readiness, and test storage isolation are described in [backend operations](docs/BACKEND_OPERATIONS.md). Readiness reports the loaded checkpoint fingerprint and operational component status; it does not certify model quality. The default pytest suite uses private temporary storage and test-only keys rather than application storage.
+
 ```powershell
 .\.venv\Scripts\python.exe -m pytest tests/test_dev_setup.py -v
 npm.cmd --prefix frontend test
@@ -243,6 +245,14 @@ To check hashes and pretrained-model forward passes **without training**:
 The [training guide](docs/TRAINING.md) includes log locations, resume commands, smaller-batch settings, final evaluation, and rebuilding preparation for a new dataset version. The pretrained forward checks have passed on the local GTX 1650. They do not establish full training memory use or predictive accuracy.
 
 ## Train on Kaggle
+
+**Latest progress:** raw-logit diagnostics are verified, and an experimental temperature-only profile has been fitted from development calibration data. No further Kaggle training is needed for this step. See **[calibration and external-validation instructions](docs/CALIBRATION_AND_EXTERNAL_VALIDATION.md)** for the results, stable scoring changes, and the remaining need for a separate labelled cohort. The profile is not deployed.
+
+**Completed diagnostic reference:** [kaggle/PulmoScan_Logit_Diagnostics.ipynb](kaggle/PulmoScan_Logit_Diagnostics.ipynb) and [the logit guide](docs/LOGIT_DIAGNOSTICS.md) reproduce the saved v2 analysis without retraining. They are retained for reproducibility; the results are already verified.
+
+**v2 training reference:** [kaggle/PulmoScan_Training_v2.ipynb](kaggle/PulmoScan_Training_v2.ipynb) and [the v2 guide](docs/TRAINING_V2.md) describe the calibration holdout and JPEG-robustness experiment. Its completed results are reviewed in the guides above. The [original model review](docs/MODEL_REVIEW_2026-11-10.md) records the earlier validation/benchmark gap. The existing benchmark must not be relabelled as fresh after further experiments.
+
+For the original v1 workflow:
 
 Import **[kaggle/PulmoScan_Training.ipynb](kaggle/PulmoScan_Training.ipynb)** into a Kaggle notebook, attach the [Chest X-Ray Images (Pneumonia) dataset](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia), select an available GPU, and enable Internet. The notebook embeds the shared training code, so no project ZIP, local dataset, `.env`, or repository credentials are needed. It audits Kaggle's input directly, trains both candidates, displays validation results, and creates a model ZIP with checksums. Final test evaluation is an explicit optional step after validation review.
 

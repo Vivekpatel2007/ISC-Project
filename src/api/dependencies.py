@@ -10,7 +10,7 @@ Provides thread-safe, lazily initialized singletons for:
 """
 
 import os
-from functools import lru_cache
+from threading import RLock
 from typing import Any, Callable, Dict, Optional
 
 from fastapi import Depends, HTTPException, status
@@ -36,13 +36,16 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 _db_instance: Optional[MetadataDB] = None
 _storage_instance: Optional[SecureImageStorage] = None
 _model_instance: Optional[DenseNetInferenceEngine] = None
+_initialization_lock = RLock()
 
 
 def get_db() -> MetadataDB:
     """Provide singleton MetadataDB instance."""
     global _db_instance
     if _db_instance is None:
-        _db_instance = MetadataDB(METADATA_DB_PATH)
+        with _initialization_lock:
+            if _db_instance is None:
+                _db_instance = MetadataDB(METADATA_DB_PATH)
     return _db_instance
 
 
@@ -72,13 +75,15 @@ def get_storage() -> SecureImageStorage:
     """Provide singleton SecureImageStorage instance."""
     global _storage_instance
     if _storage_instance is None:
-        key = get_storage_key()
-        _storage_instance = SecureImageStorage(
-            key=key,
-            storage_dir=SECURE_STORAGE_DIR,
-            db_path=METADATA_DB_PATH,
-            max_file_size_bytes=MAX_IMAGE_SIZE_BYTES
-        )
+        with _initialization_lock:
+            if _storage_instance is None:
+                key = get_storage_key()
+                _storage_instance = SecureImageStorage(
+                    key=key,
+                    storage_dir=SECURE_STORAGE_DIR,
+                    db_path=METADATA_DB_PATH,
+                    max_file_size_bytes=MAX_IMAGE_SIZE_BYTES
+                )
     return _storage_instance
 
 
@@ -86,7 +91,22 @@ def get_inference_engine() -> DenseNetInferenceEngine:
     """Provide singleton DenseNet121 inference engine instance."""
     global _model_instance
     if _model_instance is None:
-        _model_instance = DenseNetInferenceEngine(MODEL_CHECKPOINT_PATH)
+        with _initialization_lock:
+            if _model_instance is None:
+                _model_instance = DenseNetInferenceEngine(MODEL_CHECKPOINT_PATH)
+    return _model_instance
+
+
+def get_initialized_db() -> Optional[MetadataDB]:
+    """Readiness observes published instances without initializing or blocking on them."""
+    return _db_instance
+
+
+def get_initialized_storage() -> Optional[SecureImageStorage]:
+    return _storage_instance
+
+
+def get_initialized_inference_engine() -> Optional[DenseNetInferenceEngine]:
     return _model_instance
 
 

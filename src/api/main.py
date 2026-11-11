@@ -20,6 +20,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.api.auth import hash_password
 from src.api.config import (
+    API_VERSION,
     CORS_ORIGINS,
     ENABLE_DOCS,
     ENFORCE_HTTPS,
@@ -111,7 +112,7 @@ def create_app() -> FastAPI:
             "radiograph storage, SHA-256 integrity verification, role-based access control, "
             "and in-memory DenseNet121 AI-assisted pneumonia screening."
         ),
-        version="2.0.0",
+        version=API_VERSION,
         docs_url="/docs" if ENABLE_DOCS else None,
         redoc_url="/redoc" if ENABLE_DOCS else None,
         openapi_url="/openapi.json" if ENABLE_DOCS else None,

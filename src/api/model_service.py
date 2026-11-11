@@ -4,7 +4,8 @@ ISC Project: AI-Based Pneumonia Detection from Chest X-Ray Images
 
 Features:
 1. Pure In-Memory Inference: Raw bytes are decoded directly from memory via io.BytesIO.
-   Plaintext images are NEVER written to the filesystem.
+   This inference service does not write plaintext image files. Multipart ingestion
+   may spool uploads before the handler; that separate limitation is documented.
 2. Rigid Format & Integrity Validation: Does not trust filenames or client MIME types;
    decodes bytes strictly using PIL to verify genuine image content and dimensions.
 3. Checkpoint Conformity: Uses exact saved metadata from models/densenet121_pneumonia_best.pth:
@@ -18,6 +19,7 @@ Features:
 """
 
 import io
+import hashlib
 import logging
 import math
 from pathlib import Path
@@ -31,6 +33,7 @@ import torch.nn as nn
 from torchvision import models
 from src.compute import device_preference, select_device
 from src.modeling import image_transforms
+from src.scoring import binary_score_details
 
 from src.api.config import (
     ALLOWED_IMAGE_FORMATS,
@@ -82,12 +85,22 @@ class DenseNetInferenceEngine:
 
     def _load_model(self) -> None:
         """Load weights, architecture, and inference metadata from checkpoint."""
-        ckpt = torch.load(self.checkpoint_path, map_location="cpu", weights_only=True)
+        payload = self.checkpoint_path.read_bytes()
+        ckpt = torch.load(io.BytesIO(payload), map_location="cpu", weights_only=True)
 
         if not isinstance(ckpt, dict) or not isinstance(ckpt.get("model_state_dict"), dict):
             raise ModelInferenceError("Checkpoint must contain model_state_dict.")
         if ckpt.get("architecture", "densenet121") != "densenet121":
             raise ModelInferenceError("Checkpoint architecture must be densenet121.")
+        manifest = ckpt.get('manifest_sha256')
+        if manifest is not None:
+            if not isinstance(manifest, str) or len(manifest) != 64 or any(c not in '0123456789abcdef' for c in manifest):
+                raise ModelInferenceError('Checkpoint manifest SHA-256 must be a lowercase hexadecimal digest.')
+            if ckpt.get('finalized') is not True or 'threshold' not in ckpt or 'preprocessing' not in ckpt:
+                raise ModelInferenceError('Manifest-based inference requires a finalized best checkpoint, not a provisional or resume checkpoint.')
+        self.checkpoint_sha256 = hashlib.sha256(payload).hexdigest()
+        self.source_manifest_sha256 = manifest
+        self.checkpoint_finalized = ckpt.get('finalized') if manifest is not None else None
 
         self.class_names = ckpt.get("class_names", ["NORMAL", "PNEUMONIA"])
         self.class_to_idx = ckpt.get("class_to_idx", {"NORMAL": 0, "PNEUMONIA": 1})
@@ -110,6 +123,8 @@ class DenseNetInferenceEngine:
         if not isinstance(self.preprocessing, dict) or self.preprocessing.get("resize_mode") not in {"stretch", "letterbox"}:
             raise ModelInferenceError("Checkpoint preprocessing resize_mode must be stretch or letterbox.")
         self.best_epoch = ckpt.get("best_epoch", 5)
+        if type(self.best_epoch) is not int or self.best_epoch < 0:
+            raise ModelInferenceError('Checkpoint best_epoch must be a nonnegative integer.')
 
         # Reconstruct DenseNet121 architecture matching training pipeline
         model = models.densenet121(weights=None)
@@ -141,6 +156,15 @@ class DenseNetInferenceEngine:
 
         # Standardized eval transformation
         self.transform = image_transforms(self.image_size, self.norm, self.preprocessing["resize_mode"])
+
+    def model_information(self) -> Dict[str, Any]:
+        """Identify the exact loaded bytes; expose no local paths or free-form checkpoint fields."""
+        return dict(architecture='densenet121', class_names=list(self.class_names), epoch=self.best_epoch,
+                    checkpoint_sha256=self.checkpoint_sha256, source_manifest_sha256=self.source_manifest_sha256,
+                    checkpoint_finalized=self.checkpoint_finalized, image_size=self.image_size,
+                    preprocessing={'resize_mode': self.preprocessing['resize_mode']}, threshold=self.threshold,
+                    device=str(self.device), probabilities_calibrated=False,
+                    score_interpretation='uncalibrated_model_score')
 
     def validate_and_decode_image(self, image_bytes: bytes) -> Image.Image:
         """
@@ -201,7 +225,10 @@ class DenseNetInferenceEngine:
                 logits = self.model(input_tensor)
             if logits.shape != (1, 2) or not bool(torch.isfinite(logits).all()):
                 raise ModelInferenceError("Model returned invalid or non-finite class scores.")
-            probs = torch.softmax(logits.float(), dim=1).squeeze().cpu().numpy()
+            details = binary_score_details(logits)
+            probs = details['probabilities_float32'].squeeze().cpu().numpy()
+            margin = float(details['logit_margins'][0].cpu())
+            log_probabilities = details['log_probabilities'][0].cpu().tolist()
 
         # Class 0: NORMAL, Class 1: PNEUMONIA
         prob_normal = float(probs[0])
@@ -216,8 +243,14 @@ class DenseNetInferenceEngine:
             "pneumonia_probability": round(prob_pneumonia, 4),
             "normal_probability": round(prob_normal, 4),
             "threshold_applied": round(threshold, 8),
+            "logit_margin": margin,
+            "log_probability_normal": log_probabilities[0],
+            "log_probability_pneumonia": log_probabilities[1],
+            "probabilities_calibrated": False,
+            "score_interpretation": "uncalibrated_model_score",
             "model_architecture": "densenet121",
             "model_epoch": self.best_epoch,
+            "model_checkpoint_sha256": getattr(self, 'checkpoint_sha256', None),
             "device": str(self.device),
             "disclaimer": DISCLAIMER_TEXT
         }

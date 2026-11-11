@@ -44,9 +44,10 @@ def export_suite(suite, output, include_resume=False):
                                or path.name == 'best.pt' or (include_resume and path.name == 'last.pt')):
             files['suite/' + path.relative_to(suite).as_posix()] = path
     # Include the exact training implementation, without app secrets, patient data, or local images.
-    for relative in ('src/data_protocol.py', 'src/modeling.py', 'src/training.py', 'src/compute.py',
+    for relative in ('src/data_protocol.py', 'src/modeling.py', 'src/scoring.py', 'src/training.py', 'src/compute.py',
                      'src/prepare_dataset.py', 'scripts/train_models.py', 'scripts/audit_dataset.py',
-                     'scripts/evaluate_experiment.py', 'scripts/check_training_data.py', 'scripts/experiment_bundle.py'):
+                     'scripts/evaluate_experiment.py', 'scripts/check_training_data.py', 'scripts/experiment_bundle.py',
+                     'scripts/diagnose_experiment.py'):
         files['source/' + relative] = ROOT / relative
     index = dict(schema_version=1, suite_name=suite.name, created_at=datetime.now(timezone.utc).isoformat(),
                  includes_resume=include_resume, test_evaluated=bool(comparison.get('test_evaluated')),

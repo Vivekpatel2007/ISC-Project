@@ -20,7 +20,8 @@ def extract_patient_id(filename, class_name):
     return subject
 
 
-def prepare_dataset(data_dir, output_dir, train_ratio=0.85, random_seed=42, audit_path=None, previous_audit=None):
+def prepare_dataset(data_dir, output_dir, train_ratio=0.85, random_seed=42, audit_path=None, previous_audit=None,
+                    calibration_ratio=0.0):
     data_dir, output_dir = Path(data_dir).resolve(), Path(output_dir).resolve()
     if output_dir.exists() and any(output_dir.iterdir()):
         raise ValueError('Output directory is not empty. Use a new experiment directory; existing manifests are preserved.')
@@ -47,7 +48,7 @@ def prepare_dataset(data_dir, output_dir, train_ratio=0.85, random_seed=42, audi
         old = {row['path']: row for row in previous['images']}
         changes = [dict(path=row['path'], previous_sha256=old[row['path']]['sha256'], sha256=row['sha256'])
                    for row in audit['images'] if row['path'] in old and row['sha256'] != old[row['path']]['sha256']]
-    plan = plan_splits(audit, train_ratio, random_seed, [row['path'] for row in changes])
+    plan = plan_splits(audit, train_ratio, random_seed, [row['path'] for row in changes], calibration_ratio)
     root = data_dir.relative_to(ROOT).as_posix() if data_dir.is_relative_to(ROOT) else str(data_dir)
     manifest = dict(schema_version=1, source_root=root, created_at=datetime.now(timezone.utc).isoformat(),
                     source_audit_sha256=audit['manifest_sha256'], changed_sources=changes, **plan)
@@ -68,12 +69,15 @@ def main():
     parser.add_argument('--output-dir', '--output_dir', type=Path, default=Path('data/prepared/screening-v1'))
     parser.add_argument('--train-ratio', '--train_ratio', type=float, default=0.85)
     parser.add_argument('--seed', '--random_seed', type=int, default=42)
+    parser.add_argument('--calibration-ratio', type=float, default=0.0,
+                        help='Reserve a disjoint threshold holdout in addition to training and model-selection validation')
     parser.add_argument('--audit', type=Path)
     parser.add_argument('--previous-audit', type=Path, help='Quarantine candidate components whose files changed since this audit.')
     parser.add_argument('--patient_grouping', action='store_true', help='Compatibility flag: grouping is always enabled.')
     parser.add_argument('--deduplicate', action='store_true', help='Compatibility flag: exact-pixel deduplication is always enabled.')
     args = parser.parse_args()
-    prepare_dataset(args.data_dir, args.output_dir, args.train_ratio, args.seed, args.audit, args.previous_audit)
+    prepare_dataset(args.data_dir, args.output_dir, args.train_ratio, args.seed, args.audit, args.previous_audit,
+                    args.calibration_ratio)
 
 
 if __name__ == '__main__':

@@ -48,7 +48,8 @@ def restore_previous(previous, workspace):
     previous, workspace = Path(previous).resolve(), Path(workspace).resolve()
     if (workspace / 'data').exists():
         raise ValueError('This workspace already has data/; leave RESUME_SOURCE=None to keep using it.')
-    if not (previous / 'data/prepared/kaggle-v1/manifest.json').is_file():
+    saved_config = json.loads((previous / 'configs/kaggle_resolved.json').read_text(encoding='utf-8'))
+    if not (previous / saved_config['manifest']).is_file():
         raise ValueError('RESUME_SOURCE must point to the saved pulmoscan_training workspace, not an individual model.')
     if (previous / 'source_index.json').read_bytes() != (workspace / 'source_index.json').read_bytes():
         raise ValueError('The saved run used different source code. Resume with its original notebook version.')
@@ -62,13 +63,16 @@ def restore_previous(previous, workspace):
     print('Restored previous artifacts; original source/manifest identity remains unchanged.', flush=True)
 
 
-def prepare(workspace, data_root, batch_size=16, accumulation_steps=1, epochs=25):
+def prepare(workspace, data_root, batch_size=16, accumulation_steps=1, epochs=25, profile='v1'):
     from scripts.audit_dataset import audit_dataset
     from scripts.train_models import read_config
     from src.data_protocol import load_manifest
     from src.prepare_dataset import prepare_dataset
     workspace, data_root = Path(workspace).resolve(), Path(data_root).resolve()
-    manifest_path = workspace / 'data/prepared/kaggle-v1/manifest.json'
+    if profile not in {'v1', 'v2'}:
+        raise ValueError('Unknown experiment profile.')
+    config = json.loads((workspace / ('kaggle/train_config_v2.json' if profile == 'v2' else 'kaggle/train_config.json')).read_text(encoding='utf-8'))
+    manifest_path = workspace / config['manifest']
     if manifest_path.exists():
         manifest, original_root = load_manifest(manifest_path)
         if original_root.resolve() != data_root:
@@ -82,8 +86,9 @@ def prepare(workspace, data_root, batch_size=16, accumulation_steps=1, epochs=25
         audit_path.parent.mkdir(parents=True, exist_ok=True)
         with audit_path.open('x', encoding='utf-8') as handle:
             json.dump(audit, handle, indent=2)
-        manifest = prepare_dataset(data_root, manifest_path.parent, audit_path=audit_path)
-    config = json.loads((workspace / 'kaggle/train_config.json').read_text(encoding='utf-8'))
+        calibration_ratio = config.get('calibration_ratio', 0.0)
+        manifest = prepare_dataset(data_root, manifest_path.parent, audit_path=audit_path,
+                                   train_ratio=0.85 - calibration_ratio, calibration_ratio=calibration_ratio)
     config.update(batch_size=batch_size, accumulation_steps=accumulation_steps, epochs=epochs)
     config_path = workspace / 'configs/kaggle_resolved.json'
     config_path.parent.mkdir(parents=True, exist_ok=True)

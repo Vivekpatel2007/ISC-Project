@@ -13,6 +13,8 @@ sys.path.insert(0, str(ROOT))
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--suite', required=True, type=Path, help='Completed suite directory under data/experiments/')
+    parser.add_argument('--allow-reviewed-benchmark', action='store_true',
+                        help='Explicitly run the already-inspected v2 benchmark as a diagnostic, not a fresh final test')
     args = parser.parse_args()
     suite = args.suite.resolve()
     if not suite.is_relative_to((ROOT / 'data/experiments').resolve()):
@@ -34,8 +36,12 @@ def main():
     from src.compute import select_device
     from src.data_protocol import load_manifest
     from src.modeling import build_classifier, image_transforms
-    from src.training import ManifestDataset, metrics, validate, write_json
+    from src.training import ManifestDataset, write_json
+    from src.scoring import collect_logits, score_logits
     manifest, root = load_manifest(checkpoint_path.parent / 'split_manifest.json')
+    if manifest.get('test_role') == 'previously_reviewed_benchmark' and not args.allow_reviewed_benchmark:
+        raise ValueError('This benchmark was already reviewed. Use an independent holdout for final claims, '
+                         'or explicitly pass --allow-reviewed-benchmark for a labelled diagnostic repeat.')
     checkpoint = torch.load(checkpoint_path, map_location='cpu', weights_only=True)
     if not checkpoint.get('finalized') or checkpoint['manifest_sha256'] != manifest['manifest_sha256']:
         raise ValueError('Only a finalized candidate with its original split manifest can be evaluated.')
@@ -46,12 +52,19 @@ def main():
     dataset = ManifestDataset(manifest, root, 'test', transform)
     loader = DataLoader(dataset, batch_size=checkpoint['training_config']['batch_size'], shuffle=False, num_workers=0)
     print(f'Final test only: {len(dataset)} unique manifest images; device={device}; threshold remains {checkpoint["threshold"]:.8f}', flush=True)
-    result = validate(model, loader, device, checkpoint['training_config']['mixed_precision'] and device.type == 'cuda')
+    targets, logits, probabilities = collect_logits(model, loader, device,
+                                                   checkpoint['training_config']['mixed_precision'] and device.type == 'cuda')
+    result = score_logits(targets, logits, checkpoint['threshold'], probabilities)
     report = dict(architecture=checkpoint['architecture'], checkpoint_sha256=selected['checkpoint_sha256'],
                   manifest_sha256=manifest['manifest_sha256'], samples=len(dataset), device=str(device),
-                  metrics=metrics(result['targets'], result['scores'], checkpoint['threshold']), loss=result['loss'],
+                  metrics=result['metrics_at_saved_threshold'], loss=result['loss_from_logits'],
+                  roc_auc_logit_margin=result['roc_auc_logit_margin'], logits=result['logits'],
+                  logit_margins=result['margins'], score_saturation=result['score_saturation'],
                   targets=result['targets'], scores=result['scores'], paths=[row['path'] for row in dataset.rows],
                   caveat='Image-level results; candidate filename IDs do not establish verified patient independence. No test tuning.')
+    report['evaluation_role'] = manifest.get('test_role', 'reserved_benchmark')
+    if manifest.get('test_role') == 'previously_reviewed_benchmark':
+        report['caveat'] += ' Previously inspected benchmark; not an unbiased fresh final evaluation. Independent validation is required.'
     write_json(report, result_path)
     comparison['test_evaluated'] = True
     write_json(comparison, suite / 'comparison.json')

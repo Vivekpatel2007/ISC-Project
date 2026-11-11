@@ -1,7 +1,10 @@
 {
   "manifest": "data/prepared/screening-v1/manifest.json",
   "output_root": "data/experiments",
-  "models": ["densenet121", "efficientnet_b0"],
+  "models": [
+    "densenet121",
+    "efficientnet_b0"
+  ],
   "image_size": 224,
   "resize_mode": "letterbox",
   "batch_size": 2,
@@ -9,7 +12,7 @@
   "epochs": 25,
   "head_warmup_epochs": 2,
   "head_learning_rate": 0.0003,
-  "backbone_learning_rate": 0.00003,
+  "backbone_learning_rate": 3e-05,
   "weight_decay": 0.0001,
   "early_stopping_patience": 7,
   "early_stopping_min_delta": 0.0001,
@@ -19,5 +22,6 @@
   "seed": 42,
   "log_every_batches": 50,
   "validation_min_sensitivity": 0.95,
-  "num_workers": 0
+  "num_workers": 0,
+  "ranking_score_space": "logit_margin"
 }

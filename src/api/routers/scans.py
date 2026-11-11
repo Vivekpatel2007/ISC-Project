@@ -81,8 +81,14 @@ class PredictionResponse(BaseModel):
     threshold_applied: float
     model_architecture: str
     model_epoch: int
+    model_checkpoint_sha256: Optional[str] = None
     device: str
     disclaimer: str
+    logit_margin: Optional[float] = None
+    log_probability_normal: Optional[float] = None
+    log_probability_pneumonia: Optional[float] = None
+    probabilities_calibrated: bool = False
+    score_interpretation: str = 'uncalibrated_model_score'
 
 
 # =====================================================================
@@ -286,6 +292,12 @@ def predict_scan(
         threshold_applied=pred_result["threshold_applied"],
         model_architecture=pred_result["model_architecture"],
         model_epoch=pred_result["model_epoch"],
+        model_checkpoint_sha256=pred_result.get("model_checkpoint_sha256"),
         device=pred_result["device"],
-        disclaimer=pred_result["disclaimer"]
+        disclaimer=pred_result["disclaimer"],
+        logit_margin=pred_result.get("logit_margin"),
+        log_probability_normal=pred_result.get("log_probability_normal"),
+        log_probability_pneumonia=pred_result.get("log_probability_pneumonia"),
+        probabilities_calibrated=pred_result.get("probabilities_calibrated", False),
+        score_interpretation=pred_result.get("score_interpretation", "uncalibrated_model_score")
     )

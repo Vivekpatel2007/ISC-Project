@@ -1,0 +1,30 @@
+{
+  "manifest": "data/prepared/robustness-v2/manifest.json",
+  "output_root": "data/experiments",
+  "models": [
+    "densenet121",
+    "efficientnet_b0"
+  ],
+  "image_size": 224,
+  "resize_mode": "letterbox",
+  "augmentation_profile": "jpeg_robustness",
+  "threshold_split": "calibration",
+  "calibration_ratio": 0.15,
+  "batch_size": 2,
+  "accumulation_steps": 8,
+  "epochs": 25,
+  "head_warmup_epochs": 2,
+  "head_learning_rate": 0.0003,
+  "backbone_learning_rate": 3e-05,
+  "weight_decay": 0.0001,
+  "early_stopping_patience": 7,
+  "early_stopping_min_delta": 0.0001,
+  "freeze_batch_norm": true,
+  "mixed_precision": true,
+  "max_grad_norm": 1.0,
+  "seed": 42,
+  "log_every_batches": 50,
+  "validation_min_sensitivity": 0.95,
+  "num_workers": 0,
+  "ranking_score_space": "logit_margin"
+}

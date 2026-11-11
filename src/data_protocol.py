@@ -46,11 +46,13 @@ def source_file(root, relative):
     return path
 
 
-def plan_splits(audit, train_ratio=0.85, seed=42, suspect_paths=()):
+def plan_splits(audit, train_ratio=0.85, seed=42, suspect_paths=(), calibration_ratio=0.0):
     """Reserve test components; balance train/validation candidate groups by class."""
     from sklearn.model_selection import GroupShuffleSplit
     if not 0.5 <= train_ratio < 1:
         raise ValueError('train_ratio must be at least 0.5 and below 1.')
+    if not 0 <= calibration_ratio < 0.5 or train_ratio + calibration_ratio >= 1:
+        raise ValueError('Calibration ratio must be nonnegative and leave a separate validation split.')
     if audit['missing_folders'] or audit['decode_errors'] or audit['api_incompatible_images']:
         raise ValueError('Resolve the dataset audit failures before preparing an experiment.')
     rows = [dict(row) for row in audit['images']]
@@ -92,6 +94,8 @@ def plan_splits(audit, train_ratio=0.85, seed=42, suspect_paths=()):
     suspect_paths = set(suspect_paths)
     suspect_groups = {find(index) for index, row in enumerate(rows) if row['path'] in suspect_paths}
     result = {'train': [], 'val': [], 'test': []}
+    if calibration_ratio:
+        result['calibration'] = []
     excluded, candidates, seen_test, seen_pool = [], [], set(), set()
     for index, row in enumerate(rows):
         entry = {key: row[key] for key in ('path', 'label', 'sha256', 'pixel_sha256', 'candidate_subject')}
@@ -117,30 +121,51 @@ def plan_splits(audit, train_ratio=0.85, seed=42, suspect_paths=()):
         groups = [row['group'] for row in subset]
         if len(set(groups)) < 2:
             raise ValueError(f'Need at least two eligible candidate groups for {label}.')
-        splitter = GroupShuffleSplit(n_splits=64, train_size=train_ratio, random_state=seed)
-        target = len(subset) * (1 - train_ratio)
+        selection_pool_ratio = train_ratio + calibration_ratio
+        splitter = GroupShuffleSplit(n_splits=64, train_size=selection_pool_ratio, random_state=seed)
+        target = len(subset) * (1 - selection_pool_ratio)
         train_indices, val_indices = min(splitter.split(subset, groups=groups),
                                         key=lambda pair: abs(len(pair[1]) - target))
-        result['train'].extend(subset[index] for index in train_indices)
+        training_pool = [subset[index] for index in train_indices]
+        if calibration_ratio:
+            if len({row['group'] for row in training_pool}) < 2:
+                raise ValueError(f'Need more candidate groups to reserve calibration for {label}.')
+            calibration = GroupShuffleSplit(n_splits=64, train_size=train_ratio / selection_pool_ratio,
+                                            random_state=seed + 1)
+            desired = len(subset) * calibration_ratio
+            training, held_out = min(calibration.split(training_pool, groups=[row['group'] for row in training_pool]),
+                                     key=lambda pair: abs(len(pair[1]) - desired))
+            result['train'].extend(training_pool[index] for index in training)
+            result['calibration'].extend(training_pool[index] for index in held_out)
+        else:
+            result['train'].extend(training_pool)
         result['val'].extend(subset[index] for index in val_indices)
     for split in result:
         result[split].sort(key=lambda row: row['path'])
     validate_boundaries(result)
-    return dict(splits=result, excluded=excluded, train_ratio=train_ratio, seed=seed,
-                protocol='candidate-components-v1', raw_test_images=sum(row['split'] == 'test' for row in rows),
+    plan = dict(splits=result, excluded=excluded, train_ratio=train_ratio, seed=seed,
+                protocol='candidate-components-calibration-v2' if calibration_ratio else 'candidate-components-v1',
+                raw_test_images=sum(row['split'] == 'test' for row in rows),
                 counts={split: dict(Counter(row['label'] for row in items)) for split, items in result.items()},
                 exclusions=dict(Counter(row['reason'] for row in excluded)),
                 caveat='Filename-derived subjects are not authoritative patient identities. '
                        'Candidate groups and exact decoded pixels are disjoint by construction; near-duplicates remain unverified.')
+    if calibration_ratio:
+        plan.update(calibration_ratio=calibration_ratio, test_role='previously_reviewed_benchmark',
+                    test_caveat='This project already reviewed this benchmark. Repeated scores are diagnostic, '
+                                'not an unbiased fresh final evaluation; obtain an independent holdout.')
+    return plan
 
 
 def validate_boundaries(splits):
-    for split in ('train', 'val', 'test'):
+    if not {'train', 'val', 'test'} <= set(splits) or set(splits) - {'train', 'val', 'test', 'calibration'}:
+        raise ValueError('Unsupported or missing prepared splits.')
+    for split in splits:
         if set(row['label'] for row in splits[split]) != set(CLASSES):
             raise ValueError(f'{split} must contain both classes.')
     for field in ('path', 'group', 'pixel_sha256', 'sha256', 'candidate_subject'):
         seen = set()
-        for split in ('train', 'val', 'test'):
+        for split in splits:
             values = {row[field] for row in splits[split]}
             if seen & values:
                 raise ValueError(f'Cross-split {field} overlap detected.')

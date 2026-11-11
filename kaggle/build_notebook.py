@@ -10,15 +10,18 @@ import zlib
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / 'kaggle/PulmoScan_Training.ipynb'
+OUTPUT_V2 = ROOT / 'kaggle/PulmoScan_Training_v2.ipynb'
 SOURCES = (
-    'src/compute.py', 'src/data_protocol.py', 'src/modeling.py', 'src/training.py', 'src/prepare_dataset.py',
+    'src/compute.py', 'src/data_protocol.py', 'src/modeling.py', 'src/scoring.py', 'src/training.py', 'src/prepare_dataset.py',
     'scripts/train_models.py', 'scripts/audit_dataset.py', 'scripts/evaluate_experiment.py',
-    'scripts/check_training_data.py', 'scripts/experiment_bundle.py',
-    'kaggle/runtime.py', 'kaggle/train_config.json', 'kaggle/requirements.txt',
+    'scripts/check_training_data.py', 'scripts/experiment_bundle.py', 'scripts/diagnose_experiment.py',
+    'kaggle/runtime.py', 'kaggle/train_config.json', 'kaggle/train_config_v2.json', 'kaggle/requirements.txt',
 )
 
 
-def build_notebook():
+def build_notebook(profile='v1'):
+    if profile not in {'v1', 'v2'}:
+        raise ValueError('Unknown notebook profile.')
     files = {name: (ROOT / name).read_bytes() for name in SOURCES}
     # Give the extracted src/scripts priority over unrelated installed namespace packages.
     files.update({'src/__init__.py': b'', 'scripts/__init__.py': b''})
@@ -111,6 +114,7 @@ def build_notebook():
     code('''
         from datetime import datetime, timezone
         DATA_ROOT = None  # Auto-detect, or paste the directory directly containing train/, val/, test/.
+        PROFILE = 'v1'
         REQUIRE_GPU = True  # Set False deliberately to allow CPU; local training remains GPU-or-CPU automatic.
         BATCH_SIZE = 16
         ACCUMULATION_STEPS = 1
@@ -162,7 +166,7 @@ def build_notebook():
     ''')
     code('''
         config_path, manifest_path = runtime.prepare(
-            WORKSPACE, dataset_root, BATCH_SIZE, ACCUMULATION_STEPS, EPOCHS)
+            WORKSPACE, dataset_root, BATCH_SIZE, ACCUMULATION_STEPS, EPOCHS, profile=PROFILE)
         from scripts.check_training_data import main as check_data
         if check_data(['--manifest', str(manifest_path), '--passes', '2']):
             raise RuntimeError('Dataset integrity checks failed. Inspect the report; do not bypass hashes.')
@@ -182,7 +186,8 @@ def build_notebook():
         ## Train both candidates
 
         This cell performs real training with live batch/epoch logs. DenseNet121 runs first, then EfficientNet-B0.
-        Checkpoint selection uses validation ROC-AUC (validation loss breaks exact ties), with early stopping.
+        New profiles select checkpoints using validation ROC-AUC from raw logit margins
+        (validation loss breaks exact ties), with early stopping. Legacy saved profiles retain probability AUC.
         Class weights, warm-up, frozen BatchNorm statistics, mixed precision, gradient clipping, and accumulation are shared
         with the local workflow. Initial AMP scale reductions may occur; finite-loss checks remain enabled.
         A finalized threshold uses validation only, targeting at least 95% validation sensitivity while maximizing balanced accuracy.
@@ -208,6 +213,8 @@ def build_notebook():
             print(f"{row['architecture']}: best epoch={row['best_epoch']} | AUC={row['selection_metric_value']:.5f} | "
                   f"accuracy={result['accuracy']:.3%} | sensitivity={result['sensitivity']:.3%} | "
                   f"specificity={result['specificity']:.3%} | threshold={result['threshold']:.6f}")
+            if 'calibration_at_selected_threshold' in row:
+                print('Separate threshold-calibration holdout:', json.dumps(row['calibration_at_selected_threshold']))
         print('Validation-selected checkpoint:', comparison['recommended_checkpoint'])
         print('Pending candidates:', comparison['pending_candidates'])
         if importlib.util.find_spec('matplotlib'):
@@ -216,7 +223,8 @@ def build_notebook():
             for row in comparison['candidates']:
                 history = json.loads((suite / row['architecture'] / 'history.json').read_text())
                 epochs = [item['epoch'] for item in history]
-                axes[0].plot(epochs, [item['validation']['roc_auc'] for item in history], label=row['architecture'])
+                auc_field = 'roc_auc_logit_margin' if row.get('selection_metric') == 'val_logit_margin_auc' else 'roc_auc'
+                axes[0].plot(epochs, [item['validation'][auc_field] for item in history], label=row['architecture'])
                 axes[1].plot(epochs, [item['validation']['loss'] for item in history], label=row['architecture'])
             for axis, title in zip(axes, ('Validation ROC-AUC', 'Validation loss')):
                 axis.set(xlabel='Epoch', title=title)
@@ -236,8 +244,10 @@ def build_notebook():
     code('''
         final_path = suite / 'final_test_results.json'
         if RUN_FINAL_TEST and not final_path.exists():
-            subprocess.run([sys.executable, '-u', 'scripts/evaluate_experiment.py', '--suite', str(suite)],
-                           cwd=WORKSPACE, check=True)
+            command = [sys.executable, '-u', 'scripts/evaluate_experiment.py', '--suite', str(suite)]
+            if PROFILE == 'v2':
+                command.append('--allow-reviewed-benchmark')
+            subprocess.run(command, cwd=WORKSPACE, check=True)
         if final_path.exists():
             print(json.dumps(json.loads(final_path.read_text())['metrics'], indent=2))
         else:
@@ -269,25 +279,66 @@ def build_notebook():
         display(FileLink(str(download)))
         print('Also available in the Kaggle output browser. Save Version with outputs before ending this session.')
     ''')
+    if profile == 'v2':
+        for cell in cells:
+            source = ''.join(cell['source'])
+            source = source.replace('pulmoscan_training', 'pulmoscan_training_v2')
+            source = source.replace("PROFILE = 'v1'", "PROFILE = 'v2'")
+            source = source.replace("'kaggle-' + datetime", "'kaggle-v2-' + datetime")
+            source = source.replace('A finalized threshold uses validation only, targeting',
+                                    'A finalized threshold uses a separate calibration holdout after model selection, targeting')
+            if source.startswith('## Optional final test'):
+                source = textwrap.dedent('''
+                    ## Optional repeat of the reviewed benchmark — disabled by default
+
+                    The original 618-image test benchmark has already been inspected. It cannot become a fresh,
+                    unbiased final holdout again. To record a diagnostic repeat, explicitly set `RUN_FINAL_TEST=True`
+                    in the settings cell, run that cell, then run this cell. The output records
+                    `evaluation_role=previously_reviewed_benchmark`. Do not choose a model or threshold using this score.
+                    Independent holdout data is still required for final performance claims.
+                ''').strip()
+            cell['source'] = source.splitlines(keepends=True)
+        warning = textwrap.dedent('''
+            ## v2 experiment: test the compression-shortcut hypothesis
+
+            The reviewed v1 run achieved 99.72% validation accuracy but 81.39% on the reserved benchmark,
+            with 115 false-positive normal images. Metadata alone nearly separated development labels;
+            normal test images had a markedly different bytes-per-pixel distribution.
+            This suggests a dataset shortcut/shift, **not proof of its cause**.
+
+            This v2 notebook starts a separate experiment: approximately **70% training / 15% model-selection
+            validation / 15% threshold calibration** within eligible development data. Candidate groups and exact
+            duplicates stay disjoint across all four splits, including the reviewed benchmark.
+            Training-only JPEG variation (75% probability, quality 40–95 after resizing) tests compression robustness.
+            Deterministic inference preprocessing stays the same. Neither change guarantees improved generalization.
+
+            Use a new Kaggle notebook/session with this notebook. Keep v1 outputs unchanged. Review both validation
+            and separate threshold-calibration results first. Do not enable repeated benchmark evaluation by default.
+        ''').strip()
+        cells.insert(1, dict(cell_type='markdown', id='v2-experiment-notes', metadata={}, source=warning.splitlines(keepends=True)))
     return dict(nbformat=4, nbformat_minor=5, metadata=dict(
         kernelspec=dict(display_name='Python 3', language='python', name='python3'),
         language_info=dict(name='python', version='3.11'),
-        pulmoscan=dict(source_files_sha256=index, training_source='shared repository sources; generated by kaggle/build_notebook.py')),
+        pulmoscan=dict(profile=profile, source_files_sha256=index, training_source='shared repository sources; generated by kaggle/build_notebook.py')),
         cells=cells)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true', help='Fail if the generated notebook differs from current sources')
+    parser.add_argument('--profile', choices=['all', 'v1', 'v2'], default='all')
     args = parser.parse_args()
-    generated = json.dumps(build_notebook(), indent=1, ensure_ascii=False) + '\n'
-    if args.check:
-        if not OUTPUT.exists() or OUTPUT.read_text(encoding='utf-8') != generated:
-            raise SystemExit('Notebook is stale; run python kaggle/build_notebook.py.')
-        print('PASS: standalone notebook matches current shared sources.')
-    else:
-        OUTPUT.write_text(generated, encoding='utf-8')
-        print('Built:', OUTPUT, '| bytes:', OUTPUT.stat().st_size)
+    for profile, output in [('v1', OUTPUT), ('v2', OUTPUT_V2)]:
+        if args.profile not in {'all', profile}:
+            continue
+        generated = json.dumps(build_notebook(profile), indent=1, ensure_ascii=False) + '\n'
+        if args.check:
+            if not output.exists() or output.read_text(encoding='utf-8') != generated:
+                raise SystemExit('Notebook is stale; run python kaggle/build_notebook.py.')
+            print('PASS: standalone notebook matches current shared sources:', profile)
+        else:
+            output.write_text(generated, encoding='utf-8')
+            print('Built:', output, '| bytes:', output.stat().st_size)
 
 
 if __name__ == '__main__':
