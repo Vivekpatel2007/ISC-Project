@@ -1525,6 +1525,62 @@ h3 {
     padding: 25px 15px;
   }
 }
+.scan-review-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(340px, 1fr);
+  grid-template-areas: "image screening";
+  align-items: start;
+  gap: 24px;
+}
+.scan-review-image { grid-area: image; min-width: 0; }
+.scan-review-screening { grid-area: screening; min-width: 0; position: sticky; top: 20px; }
+.screening-panel { padding: 24px; }
+.screening-panel-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.screening-panel-header .eyebrow { margin-bottom: 3px; }
+.screening-icon { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); }
+.screening-run { width: 100%; min-height: 48px; }
+.screening-output { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+.screening-score { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 20px 0 12px; }
+.screening-score > span { font-size: 0.875rem; color: var(--muted); }
+.screening-score > strong { font-size: clamp(26px, 2.5vw, 36px); letter-spacing: -0.04em; line-height: 1.2; }
+.score-explanation { padding: 12px 14px; border-radius: 8px; background: var(--surface-soft); color: var(--muted); font-size: 0.875rem; }
+.screening-disclaimer { display: flex; align-items: start; gap: 10px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 0.875rem; }
+.screening-disclaimer > svg { color: var(--amber); margin-top: 3px; }
+.screening-disclaimer p { color: var(--muted); margin-top: 5px; }
+.screening-progress { margin-top: 20px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-soft); }
+.screening-progress p { font-size: 0.875rem; color: var(--muted); margin-top: 6px; }
+.review-disclosure { margin-top: 18px; }
+.review-disclosure:first-child { margin-top: 0; }
+.review-disclosure > summary { cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 10px; min-height: 36px; list-style: none; }
+.review-disclosure > summary::-webkit-details-marker { display: none; }
+.review-disclosure > summary::after { content: "+"; margin-left: auto; font-size: 20px; font-weight: 400; color: var(--muted); }
+.review-disclosure[open] > summary::after { content: "−"; }
+.patient-management { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 16px; }
+.patient-action-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.scan-storage-note { display: flex; gap: 9px; align-items: center; color: var(--muted); font-size: 0.875rem; }
+.account-options { display: grid; gap: 10px; }
+.account-options > button { display: flex; align-items: center; gap: 13px; padding: 16px; width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); }
+.account-options > button:hover { background: var(--surface-soft); border-color: var(--accent); }
+.account-options > button > svg:first-child { color: var(--accent); flex-shrink: 0; }
+.account-options > button > svg:last-child { margin-left: auto; color: var(--muted); flex-shrink: 0; }
+.account-options strong, .account-options small { display: block; }
+.account-options small { color: var(--muted); font-size: 0.875rem; margin-top: 3px; }
+.account-dialog { width: min(580px, calc(100vw - 32px)); max-width: calc(100vw - 32px); max-height: 90dvh; padding: 0; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); }
+.account-dialog::backdrop { background: #000b; }
+.account-dialog-content { padding: 28px; }
+.account-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.account-dialog-header .eyebrow { margin-bottom: 4px; }
+.account-dialog .detail-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.account-editor-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; padding-top: 16px; margin-top: 20px; border-top: 1px solid var(--line); }
+@media (max-width: 1100px) {
+  .scan-review-grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "screening" "image"; }
+  .scan-review-screening { position: static; }
+}
+@media (max-width: 600px) {
+  .screening-panel, .account-dialog-content { padding: 20px; }
+  .scan-review-grid { gap: 20px; }
+  .screening-result { overflow-wrap: anywhere; }
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -5,6 +5,8 @@ import PatientsPage from '@/app/patients/page';
 import { RadiographViewer, StoredRadiograph } from '@/components/radiograph-viewer';
 import { PatientActions } from '@/components/patient-actions';
 import { AccountEditor } from '@/components/account-editor';
+import { AccountSettings } from '@/components/account-settings';
+import { ActiveModel } from '@/components/active-model';
 import { apiClient } from '@/lib/api-client';
 import type { ScanMetadata } from '@/lib/types';
 import { patientGroups } from '@/lib/patients';
@@ -107,9 +109,9 @@ describe('Protected radiograph viewer', () => {
 describe('Account editor', () => {
   it('rejects mismatched passwords and clears secrets after a successful save', async () => {
     updateAccount.mockResolvedValue(undefined);
-    render(<AccountEditor user={{user_id: 'account-a', username: 'doctor_a', role: 'doctor'}} />);
+    render(<AccountEditor mode="password" user={{user_id: 'account-a', username: 'doctor_a', role: 'doctor'}} />);
     fireEvent.change(screen.getByLabelText('Current password'), {target:{value:'OriginalPassword123!'}});
-    fireEvent.change(screen.getByLabelText('New password (optional)'), {target:{value:'NewPassword123!'}});
+    fireEvent.change(screen.getByLabelText('New password'), {target:{value:'NewPassword123!'}});
     fireEvent.change(screen.getByLabelText('Confirm new password'), {target:{value:'DifferentPassword123!'}});
     fireEvent.click(screen.getByRole('button', {name:'Save account changes'}));
     expect(await screen.findByRole('alert')).toHaveTextContent('do not match');
@@ -118,7 +120,61 @@ describe('Account editor', () => {
     fireEvent.click(screen.getByRole('button', {name:'Save account changes'}));
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Account saved'));
     expect(screen.getByLabelText('Current password')).toHaveValue('');
-    expect(screen.getByLabelText('New password (optional)')).toHaveValue('');
+    expect(screen.getByLabelText('New password')).toHaveValue('');
     expect(screen.getByLabelText('Confirm new password')).toHaveValue('');
   });
+});
+
+describe('Account settings disclosure', () => {
+  const user = {user_id: 'account-a', username: 'doctor_a', full_name: 'Doctor A', role: 'doctor' as const};
+
+  it('opens profile editing on request and discards changes on cancel', () => {
+    render(<AccountSettings user={user} />);
+    expect(screen.queryByLabelText('Current password')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', {name: /Edit profile/}));
+    expect(screen.getByRole('dialog', {name:'Edit profile'})).toHaveAttribute('open');
+    expect(screen.queryByLabelText('New password')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Display name'), {target:{value:'Unsaved name'}});
+    fireEvent.change(screen.getByLabelText('Current password'), {target:{value:'Secret123!'}});
+    fireEvent.click(screen.getByRole('button', {name:'Cancel'}));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(updateAccount).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', {name: /Edit profile/}));
+    expect(screen.getByLabelText('Display name')).toHaveValue('Doctor A');
+    expect(screen.getByLabelText('Current password')).toHaveValue('');
+  });
+
+  it('opens a separate password form and closes it after saving', async () => {
+    updateAccount.mockResolvedValue(undefined);
+    render(<AccountSettings user={user} />);
+    fireEvent.click(screen.getByRole('button', {name: /Change password/}));
+    expect(screen.getByRole('dialog', {name:'Change password'})).toBeInTheDocument();
+    expect(screen.queryByLabelText('Display name')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Current password'), {target:{value:'OriginalPassword123!'}});
+    fireEvent.change(screen.getByLabelText('New password'), {target:{value:'NewPassword123!'}});
+    fireEvent.change(screen.getByLabelText('Confirm new password'), {target:{value:'NewPassword123!'}});
+    fireEvent.click(screen.getByRole('button', {name:'Save account changes'}));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Account saved'));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Current password')).not.toBeInTheDocument();
+    expect(updateAccount).toHaveBeenCalledWith({full_name:'Doctor A', username:'doctor_a', current_password:'OriginalPassword123!', new_password:'NewPassword123!'});
+  });
+
+  it('does not leave a model-status request loading forever when metadata is absent', async () => {
+    vi.spyOn(apiClient, 'checkReadiness').mockResolvedValue({status:'ready'});
+    render(<ActiveModel />);
+    fireEvent.click(screen.getByText('Active model'));
+    expect(await screen.findByRole('status')).toHaveTextContent('did not provide model details');
+  });
+});
+
+it('hides a previous patient image immediately when the scan changes', async () => {
+  vi.spyOn(apiClient, 'getScanImage').mockResolvedValueOnce(new Blob(['first'], {type:'image/png'}))
+    .mockImplementationOnce(() => new Promise(() => {}));
+  const view = render(<StoredRadiograph scanId="scan-a" patientId="PAT-001" token="test-token" />);
+  await screen.findByRole('button', {name:/Enlarge/});
+  view.rerender(<StoredRadiograph scanId="scan-b" patientId="PAT-002" token="test-token" />);
+  expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('Loading protected image');
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:protected-image');
 });

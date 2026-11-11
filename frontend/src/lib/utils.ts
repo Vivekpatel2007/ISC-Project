@@ -5,6 +5,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Keep rounded or saturated scores from implying absolute certainty. */
+export function formatModelScore(value: number): string {
+  if (!Number.isFinite(value) || value < 0 || value > 1) return 'Unavailable';
+  const percentage = (value * 100).toFixed(2);
+  if (Number(percentage) >= 100) return '>99.99%';
+  if (Number(percentage) <= 0) return '<0.01%';
+  return `${percentage}%`;
+}
+
 export function formatBytes(bytes: number, decimals = 2): string {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;

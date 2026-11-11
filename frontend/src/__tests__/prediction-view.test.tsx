@@ -101,13 +101,32 @@ describe('ScanDetailPage', () => {
       () => {
         expect(screen.getByText(/DenseNet121 AI Screening Output/i)).toBeInTheDocument();
         expect(screen.getByText(/^PNEUMONIA$/)).toBeInTheDocument();
-        expect(screen.getByText(/95.40%/i)).toBeInTheDocument();
+        expect(screen.getByText(/95.40%/i, {selector: '.screening-score strong'})).toBeInTheDocument();
         expect(screen.getByText(/Mandatory Clinical Disclaimer/i)).toBeInTheDocument();
         expect(screen.getByText(/Decision Threshold:/i)).toBeInTheDocument();
         expect(screen.getByText('0.4')).toBeInTheDocument();
       },
       { timeout: 3000 }
     );
+  });
+
+  it('puts the screening controls before record management in reading order', async () => {
+    render(<ScanDetailPage params={{id:'scan-123-abc'}} />);
+    const panel = await screen.findByRole('region', {name:'AI screening'});
+    const records = screen.getByText('Follow-up & patient records');
+    expect(panel.compareDocumentPosition(records) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole('button', {name:'Delete patient'})).not.toBeVisible();
+    fireEvent.click(records);
+    expect(screen.getByRole('button', {name:'Delete patient'})).toBeVisible();
+  });
+
+  it('explains saturated scores without rendering 100% as certainty', async () => {
+    vi.spyOn(apiClient, 'predictScan').mockResolvedValue({...mockPredictionResult, confidence:1, pneumonia_probability:1, normal_probability:0});
+    render(<ScanDetailPage params={{id:'scan-123-abc'}} />);
+    fireEvent.click(await screen.findByRole('button', {name:/run ai screening/i}));
+    await screen.findByText('>99.99%', {selector:'.screening-score strong'});
+    expect(screen.getByText(/rounding or numerical saturation/)).toBeInTheDocument();
+    expect(screen.queryByText('100.00%')).not.toBeInTheDocument();
   });
 
   it('displays tampering conflict error if ciphertext fails GCM authentication (409)', async () => {
@@ -146,7 +165,7 @@ describe('ScanDetailPage', () => {
     vi.spyOn(apiClient, 'predictScan').mockResolvedValueOnce(mockPredictionResult);
     render(<ScanDetailPage params={{ id: 'scan-123-abc' }} />);
     fireEvent.click(await screen.findByRole('button', { name: /run ai screening/i }));
-    await waitFor(() => expect(screen.getByText('95.40%')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('95.40%', {selector: '.screening-score strong'})).toBeInTheDocument());
     expect(screen.getByText(/Screening completed. The latest scan status could not be refreshed/i)).toBeInTheDocument();
     expect(screen.queryByText('Screening could not complete')).not.toBeInTheDocument();
   });
@@ -155,7 +174,7 @@ describe('ScanDetailPage', () => {
     vi.spyOn(apiClient, 'predictScan').mockResolvedValueOnce(mockPredictionResult).mockRejectedValueOnce(new ApiError(409, 'Corrupted ciphertext'));
     render(<ScanDetailPage params={{ id: 'scan-123-abc' }} />);
     fireEvent.click(await screen.findByRole('button', { name: /run ai screening/i }));
-    await screen.findByText('95.40%');
+    await screen.findByText('95.40%', {selector: '.screening-score strong'});
     fireEvent.click(screen.getByRole('button', { name: /re-run ai screening/i }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Integrity Tampering Error'));
     expect(screen.queryByText('95.40%')).not.toBeInTheDocument();

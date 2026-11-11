@@ -12,10 +12,10 @@ export function ActiveModel() {
     apiClient.checkReadiness().then((result) => {if (active) setStatus(result);}).catch(() => {if (active) setError(true);});
     return () => {active = false;};
   }, []);
-  return <section className="panel panel-padding"><p className="eyebrow">Inference engine</p><h2>Active model</h2>
+  return <section className="panel panel-padding"><details className="review-disclosure"><summary>Active model</summary>
     {status?.model ? <><p className="mt-3"><strong>{status.model.architecture}</strong> · {status.model.device.toUpperCase()}</p>
       <p className="muted text-sm mt-2">{status.model.checkpoint_finalized === null ? 'Legacy checkpoint' : 'Finalized training artifact'} · epoch {status.model.epoch}</p>
       <p className="field-label mt-4">Checkpoint SHA-256</p><code className="model-fingerprint">{status.model.checkpoint_sha256}</code>
-      <p className="field-help">Identifies the model loaded by the backend. Downloaded models become active only after a deliberate configuration change and restart. Scores are uncalibrated.</p></> : <p className="muted mt-3" role="status">{error ? 'Model status unavailable. Check that the backend is running and ready.' : 'Checking model status…'}</p>}
-  </section>;
+      <p className="field-help">Identifies the model loaded by the backend. Downloaded models become active only after a deliberate configuration change and restart. Scores are uncalibrated.</p></> : <p className="muted mt-3" role="status">{error ? 'Model status unavailable. Check that the backend is running and ready.' : status ? 'The backend did not provide model details. Restart it with the current code and check readiness.' : 'Checking model status…'}</p>}
+  </details></section>;
 }

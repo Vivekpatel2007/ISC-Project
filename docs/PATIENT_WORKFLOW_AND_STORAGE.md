@@ -17,6 +17,7 @@ Patients do **not** have login accounts. A patient record is a group of accessib
 1. Choose **Upload radiograph**, select a PNG/JPEG, and enter a pseudonymous patient ID. Uploading creates the first patient scan with status **Pending**.
 2. Open the scan. The protected image preview can be enlarged by clicking it. The viewer supports zoom, fit-to-view, scrolling, a close button, and Escape. The viewer adds no medical annotations.
 3. Click **Run AI screening** to obtain the actual backend model output.
+   - Screening controls and results sit beside the X-ray on wider screens and first on smaller screens. There is one primary screening button. Follow-up and record-management actions are below, under **Follow-up & patient records**; scan metadata and model details also expand on request.
 4. Open **Patients** to see one entry per accessible patient ID. The **newest upload** supplies the current screening status. A new, unscreened upload is pending even if an earlier scan was screened.
 5. Use **Add follow-up X-ray** to upload another image under the same ID. The new scan opens; run screening there. If its output is `NORMAL`, the patient list displays **Normal** under **Latest AI output**. Previous pneumonia outputs remain in the expandable X-ray history.
 6. **Edit patient ID** renames the ID across that patient's scans the caller can manage. Renaming into an existing accessible patient ID is rejected to avoid accidental history merging.
@@ -28,7 +29,7 @@ A doctor can manage only their own uploads. A radiologist or administrator can m
 
 ## Editable practitioner accounts
 
-Staff, radiologists, and administrators can edit their own display name, sign-in username, and password under **Profile & preferences → Edit your profile**. The current password is required. Leave the new-password fields empty to keep the existing password; a new password needs at least eight characters and at most 72 UTF-8 bytes.
+Staff, radiologists, and administrators can edit their own details under **Profile & preferences → Account settings**. Choose **Edit profile** for the display name and sign-in username, or **Change password** for a password change. Forms open in a dialog only after selection; the current password is required. Cancel, Escape, or closing the dialog discards unsaved fields. The form cannot be dismissed during a submitted save. A new password needs at least eight characters and at most 72 UTF-8 bytes. Editing profile details keeps the existing password.
 
 The immutable account UUID and assigned role cannot be edited through this form. Renaming an account updates scan ownership in the same SQLite transaction. Any successful account change increments its session version, invalidates older tokens, and gives the current tab a replacement token held only in memory. Password fields clear after a submitted save, including failed saves. Other sessions must sign in again. The normal refresh/close-tab sign-in behavior is unchanged.
 
@@ -76,11 +77,21 @@ Check **Profile & preferences → Active model**, or `GET /health/ready`, for th
 
 The Kaggle DenseNet v2 previously achieved **86.57% accuracy** on the 618-image, previously reviewed Kaggle benchmark: **81 false positives and 2 false negatives**. These are experiment results, not results of the gray test images or a claim of clinical validity. Development performance was much higher; independent validation remains pending because only the current Kaggle dataset is available. The saved temperature profile is experimental and is not loaded by the API. See [logit diagnostics](LOGIT_DIAGNOSTICS.md) and [calibration and external validation](CALIBRATION_AND_EXTERNAL_VALIDATION.md).
 
+## Why a result can look like 100%, and why prediction is fast
+
+The API rounds class scores to four decimal places before returning them. The underlying float32 softmax can also saturate at exactly 1.0. Consequently, a value displayed as 100% does not establish certainty or 100% accuracy. Our fixed-model Kaggle diagnostics include incorrect predictions with saturated scores. More generally, high neural-network confidence need not be calibrated to observed correctness; see [Guo et al., On Calibration of Modern Neural Networks](https://proceedings.mlr.press/v70/guo17a.html).
+
+The frontend now displays such rounded/saturated values as **>99.99%**, and near-zero values as **<0.01%**, with a visible uncalibrated-score explanation. This changes presentation only: no probabilities, labels, saved thresholds, weights, or calibration are changed. The class bars are labelled **model scores**.
+
+Prediction uses an already-trained network loaded into memory and processes one resized 224×224 image in evaluation mode, without gradient updates. Decoding, preprocessing, decryption, a forward pass, and response/database work are much less work than fitting weights across many images and epochs. A few seconds for one request is plausible; it does not prove accuracy, generalization, or that the model is the best. Actual latency depends on the selected device and workload. The API's returned `device` identifies CPU or CUDA. See [the PyTorch quickstart](https://docs.pytorch.org/tutorials/beginner/basics/quickstart_tutorial.html) for the separate training and inference operations.
+
 No Kaggle model was automatically promoted, no weights were retrained, and no services were started by this work.
 
 ## Verification
 
-The updated code passed **172 backend tests**, **70 frontend tests**, frontend lint, and the Next.js production build. Tests cover ownership-scoped image access and deletion, tamper rejection, account rename/password changes and old-token rejection, follow-up history/latest-result behavior, enlarged-image controls, blob-URL cleanup, and password-field clearing. After the full tests, application storage still contained **zero scans and zero encrypted images**.
+The current UX update passed **172 backend tests**, **86 frontend tests**, frontend lint, and the Next.js production build. Tests cover ownership-scoped image access and deletion, tamper rejection, account rename/password changes and old-token rejection, follow-up history/latest-result behavior, enlarged-image controls, blob-URL cleanup, score formatting, screening-first reading order, profile-dialog cancellation/saving, and password-field clearing. Before/after SHA-256 checks confirmed that application storage, `.env`, and the active checkpoint were unchanged by these checks. This turn did not start either development server; live browser review remains manual.
+
+The earlier cleanup verification found **zero scans and zero encrypted images** after the patient-workflow implementation's full tests. Later user uploads are not automatically cleared by tests or this UX update.
 
 An offline CPU smoke check on two actual normal and two pneumonia-labelled dataset images produced four distinct pneumonia scores (`0.08`, `0.0333`, `0.9998`, `0.9965`) with the unchanged original checkpoint. This confirms the output is not a fixed 93.75%; four samples do not estimate accuracy. Results are recorded locally in ignored `data/review/prediction_smoke_20261111.json`. No samples were uploaded into application storage during this check.
 

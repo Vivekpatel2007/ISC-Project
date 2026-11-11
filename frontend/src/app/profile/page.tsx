@@ -14,7 +14,7 @@ import { useAuth } from "@/context/auth-context";
 import { useTheme } from "@/context/theme";
 import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
 import { PageHeader } from "@/components/ui";
-import { AccountEditor } from "@/components/account-editor";
+import { AccountSettings } from "@/components/account-settings";
 import { ActiveModel } from "@/components/active-model";
 
 export default function ProfilePage() {
@@ -72,7 +72,7 @@ export default function ProfilePage() {
                 </div>
               </dl>
               <div className="form-divider" />
-              <h2>Your access, explained</h2>
+              <details className="review-disclosure"><summary>Your access, explained</summary>
               <ul className="checklist">
                 <li>
                   <UploadCloud size={17} />
@@ -104,11 +104,11 @@ export default function ProfilePage() {
                   </div>
                 </li>
               </ul>
+              </details>
             </div>
           </section>
           <aside className="space-y-5">
-            {user && <AccountEditor key={user.user_id} user={user} />}
-            <ActiveModel />
+            {user && <AccountSettings key={user.user_id} user={user} />}
             <section className="panel panel-padding">
               <p className="eyebrow">Personalize your workspace</p>
               <h2>Appearance</h2>
@@ -139,6 +139,7 @@ export default function ProfilePage() {
                 This preference is remembered on this browser.
               </p>
             </section>
+            <ActiveModel />
             <section className="panel panel-padding">
               <LockKeyhole size={21} className="accent mb-4" />
               <h2>Your session</h2>

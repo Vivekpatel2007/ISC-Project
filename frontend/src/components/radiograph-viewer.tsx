@@ -51,21 +51,22 @@ export function RadiographViewer({ src, label }: { src: string; label: string })
 }
 
 export function StoredRadiograph({ scanId, token, patientId }: { scanId: string; token: string; patientId: string }) {
-  const [image, setImage] = useState<{url?: string; error?: string; revision: number} | null>(null);
+  const [image, setImage] = useState<{url?: string; error?: string; requestKey: string} | null>(null);
   const [revision, setRevision] = useState(0);
+  const requestKey = `${scanId}:${token}:${revision}`;
   useEffect(() => {
     const abort = new AbortController();
     let url: string | undefined;
     apiClient.getScanImage(scanId, token, abort.signal).then((blob) => {
       if (abort.signal.aborted) return;
       url = URL.createObjectURL(blob);
-      setImage({url, revision});
+      setImage({url, requestKey});
     }).catch((error: unknown) => {
-      if (!abort.signal.aborted) setImage({error: error instanceof Error ? error.message : 'Image unavailable.', revision});
+      if (!abort.signal.aborted) setImage({error: error instanceof Error ? error.message : 'Image unavailable.', requestKey});
     });
     return () => { abort.abort(); if (url) URL.revokeObjectURL(url); };
-  }, [scanId, token, revision]);
-  const current = image?.revision === revision ? image : null;
+  }, [scanId, token, requestKey]);
+  const current = image?.requestKey === requestKey ? image : null;
   return <section className="panel overflow-hidden" aria-label="Stored radiograph">
     <div className="panel-padding"><h2>Chest radiograph</h2><p className="muted text-sm">Open the image for a larger view and zoom controls.</p></div>
     {current?.url ? <RadiographViewer src={current.url} label={`Radiograph for ${patientId}`} /> : current?.error ?
