@@ -2,6 +2,7 @@
 
 import { Suspense, use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ScanLine,
@@ -26,6 +27,8 @@ import {
   ErrorState,
 } from "@/components/ui";
 import { formatDate, formatBytes } from "@/lib/utils";
+import { StoredRadiograph } from "@/components/radiograph-viewer";
+import { PatientActions } from "@/components/patient-actions";
 
 function ScanDetailContent({
   params,
@@ -37,6 +40,7 @@ function ScanDetailContent({
       ? use(params as Promise<{ id: string }>)
       : (params as { id: string });
   const { token } = useAuth();
+  const router = useRouter();
   const [record, setRecord] = useState<{
     id: string;
     revision: number;
@@ -143,6 +147,7 @@ function ScanDetailContent({
               />
               <div className="upload-columns">
                 <div className="space-y-5">
+                  {token && <StoredRadiograph key={`${id}:${token}`} scanId={id} token={token} patientId={scan.patient_id} />}
                   <section className="panel panel-padding">
                     <div className="flex items-center gap-3 mb-6">
                       <span
@@ -153,7 +158,7 @@ function ScanDetailContent({
                       </span>
                       <div>
                         <h2>Radiograph details</h2>
-                        <p className="muted text-[11px]">
+                        <p className="muted text-sm">
                           Stored securely · AES-256-GCM
                         </p>
                       </div>
@@ -188,6 +193,9 @@ function ScanDetailContent({
                         </dd>
                       </div>
                     </dl>
+                    {token && <div className="form-divider" />}
+                    {token && <PatientActions key={scan.patient_id} patientId={scan.patient_id} token={token}
+                      onRenamed={() => setRevision((v) => v + 1)} onDeleted={() => router.push('/patients')} />}
                   </section>
                   {predictionError && (
                     <ErrorState
@@ -228,8 +236,8 @@ function ScanDetailContent({
                       </div>
                       <div className="flex justify-between items-end gap-4 mt-6">
                         <div>
-                          <p className="muted text-[11px]">
-                            Model confidence in its selected class
+                          <p className="muted text-sm">
+                            Model score for the selected class
                           </p>
                           <p className="score-number mt-1">
                             {(output.confidence * 100).toFixed(2)}%
@@ -239,6 +247,7 @@ function ScanDetailContent({
                           AI screening score
                         </span>
                       </div>
+                      <p className="muted text-sm mt-4">This score is uncalibrated. It is not the model’s accuracy or the chance that a patient has pneumonia.</p>
                       {[
                         {
                           label: "Pneumonia probability",
@@ -275,12 +284,13 @@ function ScanDetailContent({
                           </div>
                         </div>
                       ))}
-                      <div className="flex flex-wrap gap-4 muted text-[11px] mt-6">
+                      <div className="flex flex-wrap gap-4 muted text-sm mt-6">
                         <span>
                           Decision Threshold:{" "}
                           <strong>{output.threshold_applied}</strong>
                         </span>
                         <span>Compute: {output.device.toUpperCase()}</span>
+                        {output.model_checkpoint_sha256 && <span title={output.model_checkpoint_sha256}>Model ID: <code>{output.model_checkpoint_sha256.slice(0, 12)}</code></span>}
                       </div>
                       <div className="notice notice-warning mt-6">
                         <AlertTriangle size={17} className="shrink-0" />
@@ -351,7 +361,7 @@ function ScanDetailContent({
                       </button>
                     )}
                     <div className="form-divider" />
-                    <p className="muted text-[11px]">
+                    <p className="muted text-sm">
                       Review results with the radiograph, patient history, and
                       other clinical findings.
                     </p>

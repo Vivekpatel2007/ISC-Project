@@ -14,7 +14,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
-import { ApiError, UserProfile, UserRole } from '@/lib/types';
+import { ApiError, UserProfile, UserRole, AccountUpdate } from '@/lib/types';
 import { getLoginPath, portalForRole, rememberLoginPortal, type LoginPortal } from '@/lib/login-portal';
 
 interface AuthContextValue {
@@ -26,6 +26,7 @@ interface AuthContextValue {
   login: (username: string, password: string, portal?: LoginPortal, signal?: AbortSignal) => Promise<void>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
+  updateAccount: (change: AccountUpdate) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -104,6 +105,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [token, logout]);
 
+  const updateAccount = useCallback(async (change: AccountUpdate) => {
+    if (!token) throw new ApiError(401, 'Sign in to update your account.');
+    const attempt = authAttempt.current;
+    const updated = await apiClient.updateAccount(change, token);
+    if (attempt !== authAttempt.current || currentToken.current !== token) return;
+    authAttempt.current += 1;
+    currentToken.current = updated.access_token;
+    setToken(updated.access_token);
+    setUser(updated.user);
+  }, [token]);
+
   const value: AuthContextValue = {
     token,
     user,
@@ -113,6 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     logout,
     refreshProfile,
+    updateAccount,
   };
 
   return (

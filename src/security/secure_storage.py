@@ -229,6 +229,8 @@ class SecureImageStorage:
         """
         file_path = self._get_encrypted_file_path(scan_id)
         if file_path.exists():
-            try: file_path.unlink()
-            except Exception: pass
+            try:
+                file_path.unlink()
+            except OSError:
+                raise StorageError('Could not remove encrypted image; scan record was retained.') from None
         self.db.delete_scan(scan_id)

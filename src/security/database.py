@@ -129,6 +129,8 @@ class MetadataDB:
                 );
             """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);")
+            if 'auth_version' not in {row['name'] for row in conn.execute('PRAGMA table_info(users)')}:
+                conn.execute('ALTER TABLE users ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 0')
 
     # =====================================================================
     # User Management (RBAC)
@@ -187,6 +189,37 @@ class MetadataDB:
         with self._connection() as conn:
             cursor = conn.execute("SELECT user_id, username, role, full_name, created_at FROM users ORDER BY created_at ASC;")
             return [dict(r) for r in cursor.fetchall()]
+
+    def update_account(self, user_id: str, username: str, full_name: str,
+                       password_hash: str, expected_version: int) -> Dict[str, Any]:
+        """Rename ownership and revoke old sessions in the same transaction."""
+        username = validate_username(username)
+        try:
+            with self._connection() as conn:
+                old = conn.execute('SELECT username FROM users WHERE user_id=?', (user_id,)).fetchone()
+                if old is None:
+                    raise StorageError('Account no longer exists.')
+                cursor = conn.execute('UPDATE users SET username=?, full_name=?, password_hash=?, '
+                                      'auth_version=auth_version+1 WHERE user_id=? AND auth_version=?',
+                                      (username, full_name, password_hash, user_id, expected_version))
+                if cursor.rowcount != 1:
+                    raise StorageError('Account changed in another session. Sign in again.')
+                conn.execute('UPDATE scans SET uploaded_by=? WHERE uploaded_by=?', (username, old['username']))
+        except sqlite3.IntegrityError:
+            raise StorageError('That username is already in use.') from None
+        return self.get_user_by_id(user_id)
+
+    def rename_patient(self, old_id: str, new_id: str, uploader: Optional[str] = None) -> int:
+        old_id, new_id = validate_patient_id(old_id), validate_patient_id(new_id)
+        scope = ' AND uploaded_by=?' if uploader is not None else ''
+        args = (uploader,) if uploader is not None else ()
+        with self._connection() as conn:
+            if old_id != new_id and conn.execute('SELECT 1 FROM scans WHERE patient_id=?' + scope,
+                                                  (new_id, *args)).fetchone():
+                raise StorageError('That patient ID already has records. Choose a different ID to avoid merging patients.')
+            cursor = conn.execute('UPDATE scans SET patient_id=? WHERE patient_id=?' + scope,
+                                   (new_id, old_id, *args))
+            return cursor.rowcount
 
     # =====================================================================
     # Scan Records Management

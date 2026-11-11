@@ -15,7 +15,9 @@ Security & Authorization Constraints:
    Multipart uploads may spool to framework temporary files before this handler.
 """
 
+import io
 from typing import Any, Dict, List, Optional
+from PIL import Image
 
 from fastapi import (
     APIRouter,
@@ -26,7 +28,8 @@ from fastapi import (
     UploadFile,
     status,
 )
-from pydantic import BaseModel, Field
+from fastapi.responses import Response
+from pydantic import BaseModel, Field, ConfigDict
 
 from src.api.config import (
     ALLOWED_IMAGE_FORMATS,
@@ -89,6 +92,11 @@ class PredictionResponse(BaseModel):
     log_probability_pneumonia: Optional[float] = None
     probabilities_calibrated: bool = False
     score_interpretation: str = 'uncalibrated_model_score'
+
+
+class PatientIdentifierUpdate(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    patient_id: str = Field(..., min_length=3, max_length=64)
 
 
 # =====================================================================
@@ -223,6 +231,31 @@ def get_scan(
     # Enforce RBAC access permissions
     verify_scan_access(record, current_user)
     return ScanMetadataResponse(**record)
+
+
+@router.get('/{scan_id}/image')
+def view_scan_image(scan_id: str,
+                    current_user: Dict[str, Any] = Depends(get_current_user),
+                    db: MetadataDB = Depends(get_db),
+                    storage: SecureImageStorage = Depends(get_storage)) -> Response:
+    # Authorize before reading or decrypting image bytes.
+    record = get_scan(scan_id, current_user, db)
+    try:
+        raw, _ = storage.retrieve_image(record.scan_id)
+        with Image.open(io.BytesIO(raw)) as image:
+            media_type = {'PNG': 'image/png', 'JPEG': 'image/jpeg'}.get(image.format)
+            image.verify()
+        if media_type is None:
+            raise ValueError('Unsupported image format')
+    except (AuthenticationError, IntegrityVerificationError):
+        raise HTTPException(status_code=409, detail='Stored image failed integrity verification.') from None
+    except StorageError:
+        raise HTTPException(status_code=503, detail='Stored image is unavailable.') from None
+    except Exception:
+        raise HTTPException(status_code=422, detail='Stored image cannot be displayed.') from None
+    return Response(raw, media_type=media_type, headers={
+        'Cache-Control': 'no-store, private', 'Pragma': 'no-cache',
+        'Content-Disposition': 'inline', 'X-Content-Type-Options': 'nosniff'})
 
 
 @router.post("/{scan_id}/predict", response_model=PredictionResponse)

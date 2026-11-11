@@ -1,7 +1,5 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- Local upload previews use revocable blob URLs. */
-
 import {
   useEffect,
   useRef,
@@ -27,6 +25,7 @@ import type { ScanMetadata } from "@/lib/types";
 import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
 import { PageHeader, ErrorState } from "@/components/ui";
 import { formatBytes } from "@/lib/utils";
+import { RadiographViewer } from "@/components/radiograph-viewer";
 
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg"];
@@ -214,7 +213,7 @@ export default function UploadPage() {
                 <span className="step-number">01</span>
                 <div>
                   <h2>Select your radiograph</h2>
-                  <p className="muted text-[11px] mt-1">
+                  <p className="muted text-sm mt-1">
                     Choose a clear, frontal chest X-ray.
                   </p>
                 </div>
@@ -230,7 +229,7 @@ export default function UploadPage() {
               {file ? (
                 <div className="upload-preview">
                   {preview?.file === file && (
-                    <img src={preview.url} alt="Local radiograph preview" />
+                    <RadiographViewer src={preview.url} label="Local radiograph preview" />
                   )}
                   <div className="file-metadata">
                     <div className="flex items-center gap-3 min-w-0">
@@ -310,7 +309,7 @@ export default function UploadPage() {
               </p>
               <div className="form-divider" />
               <div className="flex items-center justify-between gap-4 flex-wrap">
-                <p className="muted text-[11px] flex items-center gap-2">
+                <p className="muted text-sm flex items-center gap-2">
                   <ShieldCheck size={14} className="accent" />
                   Encrypted before storage
                 </p>

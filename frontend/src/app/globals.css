@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  --text-xs: 0.875rem;
+  --text-sm: 0.9375rem;
+}
+
 :root {
   color-scheme: light;
   --canvas: #f3f6f5;
@@ -19,7 +24,7 @@
   --rose: #b14950;
   --rose-soft: #fbecef;
   --shadow: 0 3px 12px #1e483905;
-  --sidebar-width: 252px;
+  --sidebar-width: 264px;
 }
 
 html[data-theme="dark"] {
@@ -61,7 +66,7 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  font-size: 14px;
+  font-size: 1rem;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
@@ -113,13 +118,13 @@ h1 {
   font-weight: 650;
 }
 h2 {
-  font-size: 17px;
+  font-size: 1.25rem;
   letter-spacing: -0.025em;
   line-height: 1.4;
   font-weight: 650;
 }
 h3 {
-  font-size: 15px;
+  font-size: 1.0625rem;
   font-weight: 650;
 }
 .muted {
@@ -130,7 +135,7 @@ h3 {
 }
 .eyebrow {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.8125rem;
   letter-spacing: 0.15em;
   font-weight: 650;
   text-transform: uppercase;
@@ -157,11 +162,12 @@ h3 {
   align-items: flex-end;
   justify-content: space-between;
   gap: 20px;
+  flex-wrap: wrap;
   padding: 7px 0 3px;
 }
 .page-description {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 1rem;
   margin-top: 10px;
   max-width: 620px;
 }
@@ -180,7 +186,7 @@ h3 {
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 11px 16px;
-  font-size: 12px;
+  font-size: 0.9375rem;
   font-weight: 600;
   line-height: 1.5;
   transition:
@@ -221,7 +227,7 @@ h3 {
 }
 .button-small {
   padding: 7px 11px;
-  font-size: 11px;
+  font-size: 0.875rem;
 }
 .icon-button {
   display: inline-flex;
@@ -244,7 +250,7 @@ h3 {
   align-items: center;
   gap: 7px;
   color: var(--accent);
-  font-size: 12px;
+  font-size: 0.9375rem;
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
@@ -261,7 +267,7 @@ h3 {
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--ink);
-  font-size: 13px;
+  font-size: 1rem;
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
@@ -280,12 +286,12 @@ h3 {
 .field-label {
   display: block;
   margin-bottom: 7px;
-  font-size: 12px;
+  font-size: 0.9375rem;
   font-weight: 600;
 }
 .field-help {
   margin-top: 7px;
-  font-size: 11px;
+  font-size: 0.875rem;
   color: var(--muted);
 }
 .field-icon {
@@ -319,7 +325,7 @@ h3 {
   width: fit-content;
   padding: 4px 9px;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
@@ -353,11 +359,11 @@ h3 {
   padding: 16px 18px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  font-size: 12px;
+  font-size: 0.9375rem;
 }
 .notice strong {
   display: block;
-  font-size: 12px;
+  font-size: 0.9375rem;
 }
 .notice p {
   margin-top: 3px;
@@ -390,7 +396,7 @@ h3 {
 }
 .empty-state p {
   margin-top: 6px;
-  font-size: 12px;
+  font-size: 0.9375rem;
   color: var(--muted);
   max-width: 380px;
 }
@@ -414,7 +420,7 @@ h3 {
 }
 .section-heading p {
   margin-top: 4px;
-  font-size: 11px;
+  font-size: 0.875rem;
   color: var(--muted);
 }
 .brand {
@@ -434,7 +440,7 @@ h3 {
 }
 .brand strong {
   display: block;
-  font-size: 22px;
+  font-size: 1.375rem;
   line-height: 1.2;
   letter-spacing: -0.065em;
   font-weight: 700;
@@ -444,7 +450,7 @@ h3 {
 }
 .brand small {
   display: block;
-  font-size: 7px;
+  font-size: 0.625rem;
   letter-spacing: 0.16em;
   margin-top: 3px;
   color: var(--muted);
@@ -459,7 +465,7 @@ h3 {
   color: var(--muted);
   border-radius: 8px;
   padding: 9px 11px;
-  font-size: 11px;
+  font-size: 0.875rem;
   font-weight: 550;
   white-space: nowrap;
 }
@@ -478,13 +484,14 @@ h3 {
   display: flex;
   flex-direction: column;
   z-index: 40;
+  overflow-y: auto;
 }
 .sidebar-brand {
   padding: 31px 25px 26px;
 }
 .workspace-label {
   padding: 0 25px 19px;
-  font-size: 10px;
+  font-size: 0.8125rem;
   color: var(--muted);
   letter-spacing: 0.04em;
   display: flex;
@@ -505,7 +512,7 @@ h3 {
 }
 .sidebar-nav .eyebrow {
   padding: 5px 13px 10px;
-  font-size: 9px;
+  font-size: 0.75rem;
 }
 .nav-link {
   display: flex;
@@ -515,7 +522,7 @@ h3 {
   margin-bottom: 5px;
   border-radius: 8px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.9375rem;
   font-weight: 500;
   border: 1px solid transparent;
 }
@@ -542,14 +549,14 @@ h3 {
   border: 1px solid var(--line);
   border-radius: 10px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.8125rem;
 }
 .sidebar-footnote strong {
   color: var(--ink);
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
+  font-size: 0.875rem;
   margin-bottom: 5px;
 }
 .sidebar-account {
@@ -564,19 +571,19 @@ h3 {
   border-radius: 50%;
   background: var(--accent-soft);
   color: var(--accent);
-  font-size: 12px;
+  font-size: 0.9375rem;
   font-weight: 650;
   flex-shrink: 0;
 }
 .account-name {
-  font-size: 11px;
+  font-size: 0.875rem;
   font-weight: 600;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 .account-role {
-  font-size: 10px;
+  font-size: 0.8125rem;
   color: var(--muted);
   text-transform: capitalize;
 }
@@ -598,7 +605,7 @@ h3 {
   display: flex;
   align-items: center;
   gap: 13px;
-  font-size: 11px;
+  font-size: 0.875rem;
   color: var(--muted);
 }
 .breadcrumb strong {
@@ -615,7 +622,7 @@ h3 {
   gap: 9px;
   align-items: center;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.875rem;
 }
 .workspace-content {
   max-width: 1440px;
@@ -628,7 +635,7 @@ h3 {
   align-items: center;
   border-top: 1px solid var(--line);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.8125rem;
   padding: 17px 35px;
   margin-top: 36px;
 }
@@ -683,19 +690,19 @@ h3 {
   padding: 21px;
 }
 .stat-label {
-  font-size: 11px;
+  font-size: 0.875rem;
   color: var(--muted);
 }
 .stat-number {
   margin-top: 16px;
-  font-size: 32px;
+  font-size: 2rem;
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.05em;
   font-variant-numeric: tabular-nums;
 }
 .stat-foot {
-  font-size: 10px;
+  font-size: 0.8125rem;
   color: var(--muted);
   margin-top: 9px;
 }
@@ -730,10 +737,10 @@ h3 {
   color: var(--accent);
 }
 .scope-banner h2 {
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 .scope-banner p {
-  font-size: 12px;
+  font-size: 0.9375rem;
   margin-top: 6px;
   max-width: 500px;
 }
@@ -747,7 +754,7 @@ h3 {
   justify-content: space-between;
   gap: 12px;
   margin: 19px 0 7px;
-  font-size: 12px;
+  font-size: 0.9375rem;
 }
 .progress-track {
   height: 6px;
@@ -775,17 +782,17 @@ h3 {
   height: 25px;
   display: grid;
   place-items: center;
-  font-size: 10px;
+  font-size: 0.8125rem;
   color: var(--muted);
   flex-shrink: 0;
 }
 .workflow-step strong {
-  font-size: 11px;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 .workflow-step p {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.875rem;
   margin-top: 3px;
 }
 .table-scroll {
@@ -799,7 +806,7 @@ h3 {
   white-space: nowrap;
 }
 .scan-table th {
-  font-size: 9px;
+  font-size: 0.75rem;
   color: var(--muted);
   font-weight: 550;
   text-transform: uppercase;
@@ -810,7 +817,7 @@ h3 {
 }
 .scan-table td {
   padding: 17px 22px;
-  font-size: 11px;
+  font-size: 0.875rem;
   border-bottom: 1px solid var(--line);
 }
 .scan-table tr:last-child td {
@@ -835,12 +842,12 @@ h3 {
   background: var(--surface-soft);
 }
 .patient-cell strong {
-  font-size: 11px;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 .patient-cell small {
   display: block;
-  font-size: 9px;
+  font-size: 0.75rem;
   color: var(--faint);
   margin-top: 3px;
 }
@@ -853,7 +860,7 @@ h3 {
   border-top: 1px solid var(--line);
   padding: 15px 22px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.875rem;
 }
 .filter-toolbar {
   padding: 19px 22px;
@@ -880,7 +887,7 @@ h3 {
   border: 0;
   color: var(--muted);
   background: transparent;
-  font-size: 11px;
+  font-size: 0.875rem;
 }
 .segmented-control button[aria-pressed="true"] {
   background: var(--surface);
@@ -892,7 +899,7 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 0.875rem;
   color: var(--muted);
 }
 .mobile-scan-list {
@@ -904,6 +911,32 @@ h3 {
   gap: 22px;
   align-items: start;
 }
+
+.profile-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 24px; align-items: start; }
+.field label { display: block; margin-bottom: 7px; font-weight: 600; }
+.password-field { position: relative; }
+.password-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); border: 0; background: transparent; padding: 6px; }
+.patient-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; }
+.patient-history { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); }
+.patient-history summary { cursor: pointer; font-weight: 600; }
+.patient-history ul { list-style: none; padding: 0; margin: 16px 0 0; }
+.patient-history li { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--line); }
+.patient-history a { color: var(--accent); }
+.radiograph-preview { display: block; position: relative; width: 100%; border: 0; padding: 0; background: #070e12; color: #fff; overflow: hidden; }
+.radiograph-preview img { display: block; width: 100%; height: clamp(300px, 42vh, 500px); object-fit: contain; }
+.radiograph-preview > span { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; background: #13272d; font-size: 0.9375rem; }
+.radiograph-dialog { width: min(1200px, 96vw); max-width: 96vw; max-height: 96dvh; padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); }
+.radiograph-dialog::backdrop { background: #000c; }
+.viewer-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; }
+.viewer-toolbar p, .viewer-caption { color: var(--muted); font-size: 0.875rem; }
+.viewer-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 0 20px 12px; }
+.viewer-controls output { min-width: 48px; text-align: center; }
+.viewer-viewport { height: min(65dvh, 800px); overflow: auto; background: #070e12; overscroll-behavior: contain; }
+.viewer-viewport img { display: block; max-width: none; object-fit: contain; }
+.viewer-caption { padding: 12px 20px; }
+.model-fingerprint { overflow-wrap: anywhere; font-size: 0.875rem; }
+@media (max-width: 1200px) { .profile-columns { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { .detail-grid { grid-template-columns: minmax(0, 1fr); } .viewer-toolbar { padding: 12px; } .viewer-toolbar h2 { font-size: 1rem; } }
 .upload-columns form .button-primary {
   max-width: 100%;
   white-space: normal;
@@ -954,11 +987,11 @@ h3 {
   place-items: center;
 }
 .dropzone strong {
-  font-size: 14px;
+  font-size: 1rem;
 }
 .dropzone p {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 0.875rem;
 }
 .dropzone .browse-label {
   color: var(--accent);
@@ -985,13 +1018,13 @@ h3 {
   padding: 15px;
 }
 .file-metadata p {
-  font-size: 12px;
+  font-size: 0.9375rem;
   font-weight: 550;
   overflow-wrap: anywhere;
 }
 .file-metadata small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.8125rem;
 }
 .form-divider {
   height: 1px;
@@ -1008,7 +1041,7 @@ h3 {
   gap: 10px;
   align-items: flex-start;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 0.9375rem;
   margin-bottom: 16px;
 }
 .checklist svg {
@@ -1039,12 +1072,12 @@ h3 {
   gap: 21px;
 }
 .detail-item dt {
-  font-size: 10px;
+  font-size: 0.8125rem;
   color: var(--muted);
   margin-bottom: 5px;
 }
 .detail-item dd {
-  font-size: 12px;
+  font-size: 0.9375rem;
   overflow-wrap: anywhere;
   margin: 0;
 }
@@ -1057,7 +1090,7 @@ h3 {
 }
 .screening-result {
   margin-top: 4px;
-  font-size: 25px;
+  font-size: 1.5625rem;
   font-weight: 650;
   letter-spacing: -0.035em;
 }
@@ -1071,7 +1104,7 @@ h3 {
   background: var(--rose);
 }
 .score-number {
-  font-size: 28px;
+  font-size: 1.75rem;
   font-weight: 600;
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
@@ -1087,7 +1120,7 @@ h3 {
   height: 70px;
   border: 5px solid var(--surface);
   margin-top: -55px;
-  font-size: 22px;
+  font-size: 1.375rem;
   position: relative;
 }
 .appearance-option {
@@ -1099,7 +1132,7 @@ h3 {
   padding: 15px;
   color: var(--muted);
   background: var(--surface-soft);
-  font-size: 12px;
+  font-size: 0.9375rem;
 }
 .appearance-option svg {
   margin-bottom: 12px;
@@ -1161,7 +1194,7 @@ h3 {
 }
 .story-copy > p {
   color: #b1c9c0;
-  font-size: 13px;
+  font-size: 1rem;
   line-height: 1.9;
   margin-top: 23px;
   max-width: 330px;
@@ -1184,14 +1217,14 @@ h3 {
   margin-top: auto;
 }
 .story-steps span {
-  font-size: 10px;
+  font-size: 0.8125rem;
   color: #b1c9c0;
   display: flex;
   align-items: center;
   gap: 7px;
 }
 .story-steps b {
-  font-size: 9px;
+  font-size: 0.75rem;
   width: 23px;
   height: 23px;
   display: grid;
@@ -1205,7 +1238,7 @@ h3 {
   align-items: center;
   gap: 7px;
   color: #a7c4b7;
-  font-size: 10px;
+  font-size: 0.8125rem;
   border-top: 1px solid #42665a;
   padding-top: 21px;
 }
@@ -1224,7 +1257,7 @@ h3 {
   display: none;
 }
 .login-tools > p {
-  font-size: 10px;
+  font-size: 0.8125rem;
   color: var(--muted);
   display: flex;
   align-items: center;
@@ -1237,11 +1270,11 @@ h3 {
   padding: 64px 0;
 }
 .login-card h1 {
-  font-size: 31px;
+  font-size: 1.9375rem;
 }
 .login-card .page-description {
   margin-top: 12px;
-  font-size: 12px;
+  font-size: 0.9375rem;
   line-height: 1.8;
 }
 .portal-switch {
@@ -1261,7 +1294,7 @@ h3 {
   border-radius: 7px;
   color: var(--muted);
   padding: 10px;
-  font-size: 12px;
+  font-size: 0.9375rem;
   font-weight: 550;
 }
 .portal-switch a[aria-current="page"] {
@@ -1276,7 +1309,7 @@ h3 {
   padding-top: 23px;
   border-top: 1px solid var(--line);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.8125rem;
   line-height: 1.8;
 }
 .login-footer {
@@ -1284,7 +1317,7 @@ h3 {
   justify-content: space-between;
   gap: 15px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 0.8125rem;
   padding-bottom: 12px;
 }
 .spin {
@@ -1337,7 +1370,7 @@ h3 {
     padding: 28px 20px;
   }
   .brand strong {
-    font-size: 20px;
+    font-size: 1.25rem;
   }
   .workspace-content {
     padding: 25px;
@@ -1408,10 +1441,10 @@ h3 {
     gap: 11px;
   }
   .stat-number {
-    font-size: 28px;
+    font-size: 1.75rem;
   }
   .stat-label {
-    font-size: 10px;
+    font-size: 0.8125rem;
   }
   .dashboard-side {
     display: flex;
@@ -1483,7 +1516,7 @@ h3 {
     padding: 55px 0;
   }
   .login-footer {
-    font-size: 9px;
+    font-size: 0.75rem;
   }
   .notice {
     flex-wrap: wrap;

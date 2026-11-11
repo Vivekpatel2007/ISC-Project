@@ -30,7 +30,7 @@ from src.api.config import (
 )
 from src.api.dependencies import get_db, get_inference_engine, get_storage
 from src.api.model_service import ModelInferenceError
-from src.api.routers import auth_router, health_router, scans_router
+from src.api.routers import auth_router, health_router, scans_router, patients_router
 from src.security.exceptions import (
     AuthenticationError,
     DecryptionError,
@@ -76,7 +76,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     db = get_db()
 
     # 3. Seed demonstration accounts only if explicitly permitted (development/testing)
-    if SEED_DEMO_USERS:
+    if SEED_DEMO_USERS and not db.list_users():
         if db.get_user_by_username("doctor1") is None:
             db.create_user(
                 username="doctor1",
@@ -177,6 +177,7 @@ def create_app() -> FastAPI:
     # 4. Include Routers
     app.include_router(auth_router)
     app.include_router(scans_router)
+    app.include_router(patients_router)
     app.include_router(health_router)
 
     return app

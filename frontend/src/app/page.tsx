@@ -292,7 +292,7 @@ export default function DashboardPage() {
                 <span>{unavailable ? "—" : pneumonia}</span>
               </div>
               <div className="form-divider" />
-              <p className="muted text-[11px]">
+              <p className="muted text-sm">
                 Counts reflect AI screening outputs, not confirmed clinical
                 diagnoses.
               </p>

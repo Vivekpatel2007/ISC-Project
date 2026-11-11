@@ -2,6 +2,8 @@
 
 An educational healthcare software engineering project implementing end-to-end secure medical radiograph storage, deep learning diagnostic screening, and practitioner workflows.
 
+**Patient workflow and current models:** see [patient management, file storage, and model inventory](docs/PATIENT_WORKFLOW_AND_STORAGE.md). The UI supports readable laptop text, expandable X-rays, patient follow-up/history, patient ID edits/deletion, and editable practitioner accounts. The repeated 93.75% entries were identical synthetic test uploads; those 10 scans and encrypted files have been cleared. Both latest Kaggle v2 model checkpoints are preserved locally; the original model remains the configured app default.
+
 ---
 
 ## System Requirements: Read Before Setup

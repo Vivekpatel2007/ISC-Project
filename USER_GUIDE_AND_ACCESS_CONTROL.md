@@ -1,5 +1,7 @@
 # PulmoScan: Complete User Guide, Page Map, Routing & Access Control Documentation
 
+Current workflow update (11 November 2026): [patient follow-up, editable accounts, enlarged image viewing, storage, and model inventory](docs/PATIENT_WORKFLOW_AND_STORAGE.md). The new `/patients` page groups accessible scans by patient ID and shows the newest upload's screening status. Patients have no login accounts. Practitioner profile edits use `PUT /auth/me`; patient ID changes/deletion use `PUT`/`DELETE /patients/{patient_id}`; protected image viewing uses `GET /scans/{scan_id}/image`. The sections below preserve earlier architectural detail; use this linked guide for these updated workflows.
+
 > **Clinical Prototype Notice:** PulmoScan is an educational and academic demonstration system developed to explore secure healthcare architecture, authenticated medical data storage, and deep learning-assisted screening. It is **not** an FDA-cleared, CE-marked, or clinically validated diagnostic medical device. Model outputs represent algorithmic screening scores and must **never** replace certified clinical radiological evaluation or physician judgment.
 
 ---
@@ -733,6 +735,8 @@ The in-memory token architecture results in the following operational characteri
 
 1. **Open Profile:** Click **"Staff Profile"** in the sidebar (`/profile`).
 2. **Practitioner Identity:** Displays staff avatar initial, full name, username (`@doctor1`), and internal user UUID.
+   - **Edit your profile:** Change your own display name, sign-in username, or password with current-password verification. Account UUID and role remain assigned by the system. Scan ownership follows a username change; older sessions are invalidated.
+   - **Active model:** See the running backend's checkpoint fingerprint and compute device. Downloading a Kaggle ZIP does not switch the active model.
 3. **Role Tier & Permissions:** Displays role badge and specific capabilities:
    - **Doctor:** Upload & Encrypt Scans, Dedicated Patient Scans View, In-Memory AI Inference on Own Patients. Cross-doctor scans forbidden.
    - **Radiologist:** Institutional Diagnostic Clearance, Comprehensive Repository Search, Global Deep Learning Inference.

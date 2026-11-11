@@ -14,6 +14,8 @@ import { useAuth } from "@/context/auth-context";
 import { useTheme } from "@/context/theme";
 import { AuthenticatedLayout } from "@/components/layout/authenticated-layout";
 import { PageHeader } from "@/components/ui";
+import { AccountEditor } from "@/components/account-editor";
+import { ActiveModel } from "@/components/active-model";
 
 export default function ProfilePage() {
   const { user, role, logout } = useAuth();
@@ -34,7 +36,7 @@ export default function ProfilePage() {
           title="Profile & preferences"
           description="Your account, access scope, and a workspace that suits you."
         />
-        <div className="upload-columns">
+        <div className="profile-columns">
           <section className="panel">
             <div className="profile-cover" />
             <div className="panel-padding">
@@ -66,7 +68,7 @@ export default function ProfilePage() {
                 </div>
                 <div className="detail-item">
                   <dt>Account ID</dt>
-                  <dd className="font-mono text-[10px]">{user?.user_id}</dd>
+                  <dd className="font-mono text-xs">{user?.user_id}</dd>
                 </div>
               </dl>
               <div className="form-divider" />
@@ -105,6 +107,8 @@ export default function ProfilePage() {
             </div>
           </section>
           <aside className="space-y-5">
+            {user && <AccountEditor key={user.user_id} user={user} />}
+            <ActiveModel />
             <section className="panel panel-padding">
               <p className="eyebrow">Personalize your workspace</p>
               <h2>Appearance</h2>

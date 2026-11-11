@@ -163,7 +163,7 @@ export function MobileScanCards({ scans }: { scans: ScanMetadata[] }) {
             <strong className="text-sm">{scan.patient_id}</strong>
             <StatusBadge status={scan.prediction_status} />
           </div>
-          <p className="muted text-[11px] mt-2">
+          <p className="muted text-sm mt-2">
             {formatDate(scan.created_at)} · {formatBytes(scan.file_size_bytes)}
           </p>
           <div className="flex items-center justify-between mt-4">

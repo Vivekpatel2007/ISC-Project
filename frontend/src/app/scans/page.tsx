@@ -256,7 +256,7 @@ function ScanRepository() {
                         </td>
                         <td>
                           <p>{formatDate(scan.created_at)}</p>
-                          <p className="muted text-[10px] mt-1">
+                          <p className="muted text-xs mt-1">
                             by {scan.uploaded_by}
                           </p>
                         </td>

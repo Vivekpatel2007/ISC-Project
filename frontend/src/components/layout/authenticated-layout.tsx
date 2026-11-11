@@ -36,7 +36,7 @@ export function AuthenticatedLayout({ children }: { children: ReactNode }) {
         ? "Upload radiograph"
         : pathname === "/profile"
           ? "Profile & preferences"
-          : "Overview";
+          : pathname === "/patients" ? "Patients" : "Overview";
   if (isLoading) return <LoadingState label="Verifying your session..." />;
   if (!isAuthenticated)
     return (

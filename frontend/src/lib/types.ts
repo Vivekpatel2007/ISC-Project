@@ -20,6 +20,17 @@ export interface TokenResponse {
   expires_in_minutes: number;
 }
 
+export interface AccountUpdate {
+  full_name: string;
+  username: string;
+  current_password: string;
+  new_password?: string;
+}
+
+export interface AccountUpdateResponse extends TokenResponse {
+  user: UserProfile;
+}
+
 export interface ScanMetadata {
   scan_id: string;
   patient_id: string;
@@ -44,6 +55,9 @@ export interface PredictionResult {
   model_epoch: number;
   device: string;
   disclaimer: string;
+  probabilities_calibrated?: boolean;
+  model_checkpoint_sha256?: string | null;
+  logit_margin?: number | null;
 }
 
 export interface HealthStatus {
@@ -53,6 +67,14 @@ export interface HealthStatus {
 export interface ReadinessStatus {
   status: string;
   components?: Record<string, string>;
+  model?: {
+    architecture: string;
+    checkpoint_sha256: string;
+    device: string;
+    epoch: number;
+    checkpoint_finalized: boolean | null;
+    probabilities_calibrated: boolean;
+  } | null;
 }
 
 export class ApiError extends Error {

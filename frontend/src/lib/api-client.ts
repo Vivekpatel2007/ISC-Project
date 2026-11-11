@@ -11,6 +11,8 @@ import {
   ScanMetadata,
   TokenResponse,
   UserProfile,
+  AccountUpdate,
+  AccountUpdateResponse,
 } from './types';
 
 export const API_BASE_URL =
@@ -50,7 +52,8 @@ async function parseErrorResponse(response: Response): Promise<string> {
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
-  token?: string | null
+  token?: string | null,
+  responseType: 'json' | 'blob' = 'json',
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   const headers: Record<string, string> = {
@@ -82,7 +85,7 @@ async function request<T>(
       return {} as T;
     }
 
-    return (await res.json()) as T;
+    return (responseType === 'blob' ? await res.blob() : await res.json()) as T;
   } catch (err: unknown) {
     if (err instanceof ApiError) {
       throw err;
@@ -96,6 +99,21 @@ async function request<T>(
 }
 
 export const apiClient = {
+  async renamePatient(patientId: string, newId: string, token: string): Promise<{patient_id: string; updated_scans: number}> {
+    return request(`/patients/${encodeURIComponent(patientId)}`, {method: 'PUT', body: JSON.stringify({patient_id: newId})}, token);
+  },
+  async deletePatient(patientId: string, token: string): Promise<{deleted_scans: number}> {
+    return request(`/patients/${encodeURIComponent(patientId)}`, {method: 'DELETE'}, token);
+  },
+  async updateAccount(change: AccountUpdate, token: string): Promise<AccountUpdateResponse> {
+    return request<AccountUpdateResponse>('/auth/me', {method: 'PUT', body: JSON.stringify(change)}, token);
+  },
+
+  async getScanImage(scanId: string, token: string, signal?: AbortSignal): Promise<Blob> {
+    return request<Blob>(`/scans/${encodeURIComponent(scanId)}/image`,
+      {method: 'GET', cache: 'no-store', signal}, token, 'blob');
+  },
+
   /**
    * Health Check (Liveness)
    */

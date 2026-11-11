@@ -2,6 +2,8 @@
 
 This step improves backend reliability and test isolation. It does not change the loaded model's weights, threshold, calibration, or measured classification performance. Frontend/backend startup and neural training remain manual.
 
+Subsequent user-requested cleanup and workflow update: [patient management and model inventory](PATIENT_WORKFLOW_AND_STORAGE.md). The 10 synthetic scans mentioned in this historical verification were later explicitly deleted along with their encrypted files. Account settings, protected image viewing, and patient follow-up/rename/deletion are now available.
+
 ## Service initialization
 
 Database, encrypted-storage, and inference-engine instances are published only after their constructors finish. Initialization is protected by a process-local reentrant lock. Simultaneous first requests therefore cannot allocate duplicate copies of the model or race the service constructors. A failed constructor is not cached; a later explicit retry can succeed.

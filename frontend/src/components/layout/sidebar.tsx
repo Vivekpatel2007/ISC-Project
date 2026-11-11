@@ -19,6 +19,7 @@ export function Sidebar({ onNavClick }: { onNavClick?: () => void }) {
   const { user, role, logout } = useAuth();
   const items = [
     { label: "Overview", href: "/", icon: LayoutDashboard },
+    { label: "Patients", href: "/patients", icon: UserRound },
     { label: "Upload radiograph", href: "/upload", icon: UploadCloud },
     {
       label: role === "doctor" ? "My scans" : "Scan repository",

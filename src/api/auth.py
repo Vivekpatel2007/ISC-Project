@@ -132,7 +132,8 @@ def get_current_user_factory(db_getter: Callable[[], MetadataDB]):
             )
 
         user = db.get_user_by_username(username)
-        if not user:
+        if (not user or payload.get('auth_version', 0) != user.get('auth_version', 0)
+                or payload.get('user_id') != user['user_id']):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User account associated with this token no longer exists.",

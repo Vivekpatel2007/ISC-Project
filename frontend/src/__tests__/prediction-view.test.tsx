@@ -61,6 +61,9 @@ describe('ScanDetailPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(apiClient, 'getScan').mockResolvedValue(mockScanRecord);
+    URL.createObjectURL = vi.fn().mockReturnValue('blob:scan-fixture');
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(apiClient, 'getScanImage').mockResolvedValue(new Blob(['fixture'], {type: 'image/png'}));
   });
 
   it('renders authorized metadata from GET /scans/{scan_id}', async () => {
