@@ -267,7 +267,7 @@ class DenseNetInferenceEngine:
             inputs = self.transform(image).unsqueeze(0).to(self.device)
             target_index = self.class_to_idx[target_class]
             cam, logits, probabilities = densenet_gradcam(self.model, inputs, target_index, self.threshold)
-            overlay = aligned_heatmap(cam, image, self.image_size, self.preprocessing['resize_mode'])
+            overlay = aligned_heatmap(cam, image, self.image_size, self.preprocessing['resize_mode'], target_class)
         return dict(**overlay, method='Grad-CAM', target_layer=LAYER, target_class=target_class,
                     target_score='raw_class_logit', target_logit=float(logits[0, target_index].cpu()),
                     pneumonia_probability=float(probabilities[0, 1].cpu()),

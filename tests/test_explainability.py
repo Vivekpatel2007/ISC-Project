@@ -10,7 +10,7 @@ import pytest
 import torch
 from torch import nn
 
-from src.explainability import aligned_heatmap, densenet_gradcam, ExplanationMismatch
+from src.explainability import aligned_heatmap, densenet_gradcam, describe_heatmap, ExplanationMismatch
 
 
 class AnalyticalDenseNet(nn.Module):
@@ -130,3 +130,78 @@ def test_real_densenet_forward_is_identical_and_model_state_is_unchanged():
     assert torch.equal(expected, actual)
     assert all(torch.equal(value, model.state_dict()[key]) for key, value in state.items())
     assert all(parameter.grad is None for parameter in model.parameters())
+
+
+def test_numbered_notes_follow_known_regions_and_the_explained_class():
+    values = np.zeros((9, 9), dtype=np.float32)
+    values[:3, :3] = 1
+    values[6:, 6:] = .8
+    result = describe_heatmap(values, 'PNEUMONIA')
+    assert [region['location'] for region in result['regions']] == ['upper-left', 'lower-right']
+    assert [region['id'] for region in result['regions']] == [1, 2]
+    assert result['coordinate_system'] == 'displayed_image'
+    assert 'upper-left, lower-right' in result['summary']
+    assert all('PNEUMONIA' in region['description'] for region in result['regions'])
+    for region in result['regions']:
+        x, y = region['marker']
+        left, top, right, bottom = region['bounds']
+        assert left <= x < right and top <= y < bottom
+        assert values[int(y * 9), int(x * 9)] >= .8
+    normal = describe_heatmap(values, 'NORMAL')
+    assert 'NORMAL' in normal['summary']
+    assert all('NORMAL' in region['description'] for region in normal['regions'])
+
+
+def test_notes_change_when_the_hot_area_moves_and_ignore_weak_sections():
+    values = np.full((9, 9), .1, dtype=np.float32)
+    values[:3, :3] = 1
+    first = describe_heatmap(values, 'PNEUMONIA')
+    moved = describe_heatmap(np.flip(values).copy(), 'PNEUMONIA')
+    assert len(first['regions']) == len(moved['regions']) == 1
+    assert first['regions'][0]['location'] == 'upper-left'
+    assert moved['regions'][0]['location'] == 'lower-right'
+
+
+@pytest.mark.parametrize('value', [0., 1.])
+def test_uninformative_maps_do_not_invent_numbered_regions_or_findings(value):
+    result = describe_heatmap(np.full((9, 9), value, dtype=np.float32), 'PNEUMONIA')
+    assert result['regions'] == [] and result['distribution'] == 'none'
+    assert 'no image regions to describe reliably' in result['summary']
+
+
+def test_broad_maps_are_described_as_broad_not_multiple_detected_lesions():
+    values = np.ones((9, 9), dtype=np.float32); values[0, 0] = 0
+    result = describe_heatmap(values, 'NORMAL')
+    assert result['distribution'] == 'broad' and len(result['regions']) <= 3
+    assert 'broadly spread' in result['summary']
+    assert 'do not identify which medical finding' in result['summary']
+    assert result == describe_heatmap(values, 'NORMAL')
+
+
+def test_description_geometry_uses_image_content_not_bright_letterbox_padding():
+    source = Image.new('RGB', (100, 200))
+    width, height = ImageOps.contain(source, (224, 224)).size
+    left, top = (224 - width) // 2, (224 - height) // 2
+    cam = np.full((224, 224), 100, dtype=np.float32)
+    cam[top:top + height, left:left + width] = 0
+    cam[top + height * 2 // 3:top + height, left + width * 2 // 3:left + width] = 1
+    result = aligned_heatmap(cam, source, 224, 'letterbox', 'PNEUMONIA')
+    assert result['regions'][0]['location'] == 'lower-right'
+    assert all(region['marker'][0] > .5 and region['marker'][1] > .5 for region in result['regions'])
+
+
+def test_region_selection_does_not_drop_all_sections_when_a_tiny_peak_dominates():
+    values = np.zeros((9, 9), dtype=np.float32)
+    values[:3, :3] = .6
+    values[-1, -1] = 1
+    result = describe_heatmap(values, 'PNEUMONIA')
+    assert result['regions'] and result['regions'][0]['location'] == 'upper-left'
+
+
+@pytest.mark.parametrize('shape', [(1, 9), (9, 1), (2, 4)])
+def test_thin_maps_keep_markers_and_bounds_valid(shape):
+    values = np.linspace(0, 1, np.prod(shape), dtype=np.float32).reshape(shape)
+    result = describe_heatmap(values, 'NORMAL')
+    assert result['regions']
+    for region in result['regions']:
+        assert all(0 <= coordinate <= 1 for coordinate in [*region['bounds'], *region['marker']])

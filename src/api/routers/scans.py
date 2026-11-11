@@ -106,6 +106,15 @@ class ExplanationRequest(BaseModel):
     model_checkpoint_sha256: str = Field(..., pattern=r'^[0-9a-f]{64}$')
 
 
+class ExplanationRegion(BaseModel):
+    id: int = Field(..., ge=1, le=3)
+    location: str
+    title: str
+    description: str
+    bounds: List[float] = Field(..., min_length=4, max_length=4)
+    marker: List[float] = Field(..., min_length=2, max_length=2)
+
+
 class ExplanationResponse(BaseModel):
     scan_id: str
     method: str
@@ -125,6 +134,11 @@ class ExplanationResponse(BaseModel):
     width: int
     height: int
     limitation: str
+    regions: List[ExplanationRegion] = Field(default_factory=list)
+    summary: Optional[str] = None
+    summary_basis: Optional[Literal['gradcam_spatial_v1']] = None
+    coordinate_system: Optional[Literal['displayed_image']] = None
+    distribution: Optional[Literal['none', 'concentrated', 'broad']] = None
 
 
 # =====================================================================

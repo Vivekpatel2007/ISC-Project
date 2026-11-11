@@ -165,6 +165,10 @@ def test_explanation_is_protected_uncached_and_does_not_update_scan_results(work
                   device='cpu', precision='float32', preprocessing='stretch', status='available',
                   heatmap_png_base64=base64.b64encode(image).decode(), content_box=[0, 0, 224, 224],
                   width=100, height=100, limitation='Model contribution, not a disease outline.')
+    result.update(summary='Contribution is concentrated in the upper-left image section.',
+                  summary_basis='gradcam_spatial_v1', coordinate_system='displayed_image', distribution='concentrated',
+                  regions=[dict(id=1, location='upper-left', title='Upper-left image section',
+                                description='Positive contribution to the PNEUMONIA score.', bounds=[0.,0.,1/3,1/3], marker=[.1,.1])])
     engine = SimpleNamespace(explain=Mock(return_value=result))
     client.app.dependency_overrides[get_inference_engine] = lambda: engine
     route = f"/scans/{scan['scan_id']}/explain"
@@ -175,6 +179,8 @@ def test_explanation_is_protected_uncached_and_does_not_update_scan_results(work
     response = client.post(route, headers=login(), json=body)
     assert response.status_code == 200, response.text
     assert response.json()['scan_id'] == scan['scan_id']
+    assert response.json()['summary_basis'] == 'gradcam_spatial_v1'
+    assert response.json()['regions'][0]['location'] == 'upper-left'
     assert 'no-store' in response.headers['cache-control']
     engine.explain.assert_called_once_with(image, 'PNEUMONIA', 'a' * 64)
     assert db.get_scan(scan['scan_id']) == before

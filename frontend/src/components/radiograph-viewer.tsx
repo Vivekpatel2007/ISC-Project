@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Expand, X, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import type { ExplanationResult } from "@/lib/types";
+import { RegionMarkers, RegionNarrative } from "@/components/explanation-regions";
 
 function OverlayControls({ enabled, opacity, onToggle, onOpacity }: {
   enabled: boolean; opacity: number; onToggle: (enabled: boolean) => void; onOpacity: (value: number) => void;
@@ -27,10 +28,14 @@ export function RadiographViewer({ src, label, explanation }: { src: string; lab
   const [zoom, setZoom] = useState(1);
   const [overlayChoice, setOverlayChoice] = useState<boolean | null>(null);
   const [opacity, setOpacity] = useState(.45);
+  const [selectedRegion, setSelectedRegion] = useState<number | null>(null);
   const available = explanation?.status === 'available';
   const overlayEnabled = available && (overlayChoice ?? true);
   const heatmap = available ? `data:image/png;base64,${explanation.heatmap_png_base64}` : undefined;
   const overlayControls = available && <OverlayControls enabled={overlayEnabled} opacity={opacity} onToggle={setOverlayChoice} onOpacity={setOpacity} />;
+  const activeRegion = explanation?.regions?.some((region) => region.id === selectedRegion)
+    ? selectedRegion : explanation?.regions?.[0]?.id ?? null;
+  const selectRegion = (id: number) => {setSelectedRegion(id); setOverlayChoice(true);};
   useEffect(() => {
     if (!expanded) return;
     const modal = dialog.current;
@@ -53,9 +58,11 @@ export function RadiographViewer({ src, label, explanation }: { src: string; lab
         <img src={src} alt={label} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         {overlayEnabled && <img src={heatmap} alt="" aria-hidden="true" className="heatmap-overlay" style={{opacity}} />}
+        {overlayEnabled && explanation && <RegionMarkers explanation={explanation} selected={activeRegion} />}
       </span>
       <span><Expand size={18} /> Click to enlarge</span>
     </button>
+    {explanation && <RegionNarrative explanation={explanation} selected={activeRegion} onSelect={selectRegion} />}
     <dialog ref={dialog} className="radiograph-dialog" aria-label={`${label} enlarged view`}
       onCancel={() => setExpanded(false)} onClose={() => setExpanded(false)}
       onClick={(event) => { if (event.target === event.currentTarget) setExpanded(false); }}>
@@ -76,8 +83,10 @@ export function RadiographViewer({ src, label, explanation }: { src: string; lab
           <img src={src} alt={`${label}, enlarged`} />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {overlayEnabled && <img src={heatmap} alt="" aria-hidden="true" className="heatmap-overlay" style={{opacity}} />}
+          {overlayEnabled && explanation && <RegionMarkers explanation={explanation} selected={activeRegion} />}
         </div>}
       </div>
+      {expanded && explanation && <RegionNarrative explanation={explanation} selected={activeRegion} onSelect={selectRegion} />}
       <p className="viewer-caption">{explanation ? `Grad-CAM for ${explanation.target_class}. Relative model contribution, not a disease outline.` : 'Original radiograph without AI overlays.'} Press Escape to close.</p>
     </dialog>
   </>;

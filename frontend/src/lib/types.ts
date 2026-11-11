@@ -64,6 +64,15 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface ExplanationRegion {
+  id: number;
+  location: string;
+  title: string;
+  description: string;
+  bounds: [number, number, number, number];
+  marker: [number, number];
+}
+
 export interface ExplanationResult {
   scan_id: string;
   method: 'Grad-CAM';
@@ -83,6 +92,11 @@ export interface ExplanationResult {
   width: number;
   height: number;
   limitation: string;
+  regions?: ExplanationRegion[];
+  summary?: string | null;
+  summary_basis?: 'gradcam_spatial_v1' | null;
+  coordinate_system?: 'displayed_image' | null;
+  distribution?: 'none' | 'concentrated' | 'broad' | null;
 }
 
 export interface ReadinessStatus {

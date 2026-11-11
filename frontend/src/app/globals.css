@@ -934,6 +934,23 @@ h3 {
 .heatmap-legend { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 0.8125rem; color: var(--muted); flex-wrap: wrap; }
 .heatmap-legend-gradient { flex: 1; min-width: 65px; max-width: 160px; height: 12px; border-radius: 4px; background: linear-gradient(to right, #ffe146, #ff7023, #ff0000); }
 .explanation-caption { border-top: 1px solid var(--line); }
+.region-marker-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.region-section-outline { fill: #70d6bd10; stroke: #a9ffe5; stroke-width: 2; stroke-dasharray: 7 5; }
+.region-leader { stroke: #e8fff6; stroke-width: 1.5; }
+.region-point { fill: #fff; }
+.region-number-disc { fill: #142d31; stroke: #fff; stroke-width: 2; }
+.region-number-disc.selected { fill: #087f70; stroke: #bdffe9; stroke-width: 3; }
+.region-number { fill: #fff; font-weight: 750; font-family: inherit; }
+.region-narrative { padding: 22px; border-top: 1px solid var(--line); background: var(--surface); }
+.region-summary { margin-top: 10px; font-size: 0.9375rem; color: var(--ink); line-height: 1.7; }
+.region-note-list { display: grid; list-style: none; gap: 10px; padding: 0; margin: 16px 0; }
+.region-note { display: flex; gap: 12px; width: 100%; padding: 14px; text-align: left; background: var(--surface-soft); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; }
+.region-note:hover, .region-note[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.region-note > span:last-child { display: grid; gap: 5px; }
+.region-note strong { font-size: 0.9375rem; }
+.region-note > span:last-child > span { font-size: 0.875rem; line-height: 1.65; color: var(--muted); }
+.region-note-number { display: grid; place-items: center; flex-shrink: 0; align-self: flex-start; width: 28px; height: 28px; border-radius: 50%; color: var(--accent-text); background: var(--accent); font-size: 0.875rem; font-weight: 650; }
+.region-note-help { font-size: 0.875rem; color: var(--muted); }
 .explanation-action { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
 .radiograph-dialog { width: min(1200px, 96vw); max-width: 96vw; max-height: 96dvh; padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); }
 .radiograph-dialog::backdrop { background: #000c; }

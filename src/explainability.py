@@ -55,7 +55,64 @@ class ExplanationMismatch(ValueError):
     """A fresh screening result is required before generating this explanation."""
 
 
-def aligned_heatmap(cam, image, image_size, resize_mode):
+def describe_heatmap(normalized, target_class):
+    """Deterministic spatial notes, not generated radiological findings.
+
+    Compare up to nine coarse displayed-image sections. Select at most three
+    with >=45% of the strongest section's mean normalized contribution.
+    These sections are a reading aid, not detected lesions.
+    """
+    if target_class not in {'NORMAL', 'PNEUMONIA'}:
+        raise ValueError('Invalid description target class.')
+    if (normalized.ndim != 2 or not normalized.size or not np.isfinite(normalized).all()
+            or normalized.min() < 0 or normalized.max() > 1):
+        raise ValueError('Descriptions require a finite normalized contribution map.')
+    base = dict(summary_basis='gradcam_spatial_v1', coordinate_system='displayed_image')
+    if float(np.ptp(normalized)) <= np.finfo(np.float32).eps * 16:
+        return dict(**base, regions=[], distribution='none',
+                    summary=f'The model returned {target_class}, but this heatmap has no spatially informative '
+                            'positive contribution pattern. There are no image regions to describe reliably.')
+    height, width = normalized.shape
+    rows, columns = min(3, height), min(3, width)
+    ys = np.linspace(0, height, rows + 1, dtype=int)
+    xs = np.linspace(0, width, columns + 1, dtype=int)
+    vertical = {1: ['full-height'], 2: ['upper', 'lower'], 3: ['upper', 'middle', 'lower']}[rows]
+    horizontal = {1: ['full-width'], 2: ['left', 'right'], 3: ['left', 'center', 'right']}[columns]
+    candidates = []
+    for row in range(rows):
+        for column in range(columns):
+            x0, x1, y0, y1 = int(xs[column]), int(xs[column + 1]), int(ys[row]), int(ys[row + 1])
+            section = normalized[y0:y1, x0:x1]
+            # Pick an actual near-peak pixel closest to the high-value pixels'
+            # centroid. The marker never points at an unsupported gap between peaks.
+            near_peak = np.argwhere(section >= float(section.max()) * .95)
+            center = near_peak.mean(axis=0)
+            point = near_peak[np.square(near_peak - center).sum(axis=1).argmin()]
+            candidates.append(dict(location=f'{vertical[row]}-{horizontal[column]}',
+                                   bounds=[x0 / width, y0 / height, x1 / width, y1 / height],
+                                   marker=[(x0 + int(point[1]) + .5) / width, (y0 + int(point[0]) + .5) / height],
+                                   mean=float(section.mean())))
+    candidates.sort(key=lambda item: -item['mean'])  # Stable row/column ordering breaks ties.
+    strongest = candidates[0]['mean']
+    selected = [item for item in candidates if item['mean'] >= .45 * strongest][:3]
+    regions = []
+    for number, item in enumerate(selected, 1):
+        rank = 'strongest' if number == 1 else ('second-strongest' if number == 2 else 'third-strongest')
+        regions.append(dict(id=number, location=item['location'], title=f"{item['location'].capitalize()} image section",
+                            bounds=item['bounds'], marker=item['marker'],
+                            description=f'This section has the {rank} average positive contribution among the '
+                                        f'image sections compared for the {target_class} score. Marker {number} '
+                                        'points to a high-contribution location within this section.'))
+    broad = float(np.mean(normalized >= .5)) >= .5
+    locations = ', '.join(region['location'] for region in regions)
+    summary = (f'For the {target_class} output, stronger positive contributions appear in the {locations} '
+               'sections of the displayed image. ' +
+               ('The higher-contribution pattern is broadly spread across the image. ' if broad else '') +
+               'The numbered notes describe the contribution map; they do not identify which medical finding is present.')
+    return dict(**base, regions=regions, distribution='broad' if broad else 'concentrated', summary=summary)
+
+
+def aligned_heatmap(cam, image, image_size, resize_mode, target_class=None):
     """Remove actual Pillow letterboxing, then restore the source image geometry."""
     if cam.shape != (image_size, image_size) or not np.isfinite(cam).all():
         raise ValueError('Invalid heatmap dimensions or values.')
@@ -71,6 +128,7 @@ def aligned_heatmap(cam, image, image_size, resize_mode):
     informative = maximum > 0 and maximum - minimum > np.finfo(np.float32).eps * max(maximum, 1e-20) * 16
     status = 'available' if informative else 'no_spatial_signal'
     normalized = (cropped - minimum) / (maximum - minimum) if informative else np.zeros_like(cropped)
+    narrative = describe_heatmap(normalized, target_class) if target_class is not None else {}
     restored = np.asarray(Image.fromarray(normalized.astype(np.float32)).resize(image.size, Image.Resampling.BILINEAR))
     # Yellow -> orange -> red, with transparent zero contribution. A separate UI
     # opacity slider controls the entire overlay. Intensity is relative per image.
@@ -81,5 +139,5 @@ def aligned_heatmap(cam, image, image_size, resize_mode):
     rgba[..., 3] = np.rint(255 * restored).astype(np.uint8)
     buffer = io.BytesIO()
     Image.fromarray(rgba).save(buffer, format='PNG')
-    return dict(heatmap_png_base64=base64.b64encode(buffer.getvalue()).decode('ascii'),
+    return dict(**narrative, heatmap_png_base64=base64.b64encode(buffer.getvalue()).decode('ascii'),
                 status=status, content_box=list(box), width=image.width, height=image.height)
