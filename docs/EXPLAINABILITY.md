@@ -2,6 +2,8 @@
 
 Implemented 11 November 2026. No model retraining, checkpoint promotion, extra dependencies, or monitoring services are required for this feature.
 
+**Scope decision, 13 November 2026:** retain Grad-CAM and its image-linked descriptions as the explanation feature for this prototype. Medical finding detection/report generation is deferred; no new dataset or Kaggle run is needed. See the [handoff and final review](PROJECT_HANDOFF.md).
+
 ## Review it manually
 
 Start or restart the frontend/backend yourself from the project root:
@@ -40,6 +42,8 @@ The explanation now includes an image-specific spatial summary and numbered note
 
 Each number identifies a strong contribution point inside a coarse image section. Selecting its note emphasizes that section with a dashed guide. Number labels remain inside their sections to avoid overlap; leader lines retain the actual contribution coordinates. The overlay uses the source image's SVG view box and the same aspect-preserving alignment as the image, including zoom.
 
+The reading card now distinguishes the PNEUMONIA and NORMAL class scores without turning either into a clinical conclusion. Broad maps are labelled as broadly distributed contributions. A map with no useful spatial signal has no numbered notes or heatmap controls. **How to read this explanation** keeps color interpretation, coordinate limitations and original-image comparison guidance in a collapsed disclosure. The enlarged viewer's title/caption follows the actual Original/Heatmap mode; switching to Original also clears the visible selected-note state, and selecting a note restores its overlay.
+
 Positions always mean **left/right/top/bottom of the displayed image**. The app does not infer patient laterality from JPEG/PNG pixels or assume verified DICOM orientation. Numbers count selected image sections, not lesions. A broad continuous highlight can span multiple numbered sections.
 
 The text is generated deterministically from the actual, cropped contribution map:
@@ -55,6 +59,8 @@ These heuristics summarize the Grad-CAM visualization. Their thresholds are not 
 No external language model receives the images or writes clinical prose. The classifier was trained for NORMAL/PNEUMONIA, so the notes do not claim findings such as consolidation, pleural fluid, or anatomical abnormalities.
 
 ## If we later train for medical findings
+
+This phase is **deferred**. A [dataset-access and detector plan, with a CPU-only annotation checker](FINDING_MODEL_NEXT_STEPS.md) is retained for the team; those are not current setup instructions. The existing Grad-CAM feature remains a contribution explanation; no finding detector has been trained or integrated.
 
 The user has offered to run future training on Kaggle. That is not needed for the current numbered image/text feature, and no model architecture or weights were changed for it.
 
@@ -84,7 +90,7 @@ Authentication, role/ownership checks, and the existing inference rate limiter a
 
 ## Verification and limits
 
-The current suite passed **197 backend tests** and **96 frontend tests**, plus frontend lint and the Next.js production build. Verification includes:
+Verification on 13 November 2026 passed **210 backend tests** and **99 frontend tests**, plus frontend lint and the Next.js production build. Default pytest discovery now targets `tests/`; a separate legacy evaluator has a Windows DLL limitation documented in the [handoff](PROJECT_HANDOFF.md). Verification includes:
 
 - Analytically known feature locations and target-class specificity.
 - A synthetic occlusion test that lowers the known target logit.
@@ -96,6 +102,7 @@ The current suite passed **197 backend tests** and **96 frontend tests**, plus f
 - Opt-in generation, failed-request retry, identity matching, duplicate-request prevention, request cancellation, stale-map removal, opacity, and coupled zoom.
 - Image-specific numbered notes for both classes, changing hot-area positions, weak-section exclusion, broad/empty maps, thin geometry, and description coordinates after padding removal.
 - Matched note/marker selection, original-image restoration, enlarged-view notes, and non-overlapping labels with leaders retaining actual contribution coordinates.
+- Class-specific reading guidance, broad/missing-signal states, and enlarged-view mode labels and selected-note states that follow the visible overlay.
 
 These analytical model-sensitivity and occlusion checks are inspired by [saliency-map sanity-check research](https://arxiv.org/abs/1810.03292). They are not a full parameter-randomization study, lesion-localization validation, or proof of clinical faithfulness.
 

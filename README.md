@@ -4,6 +4,8 @@ An educational healthcare software engineering project implementing end-to-end s
 
 **Optional visual explanations:** after fresh screening, **Explain prediction** generates a Grad-CAM overlay with numbered image sections, linked plain-language notes, Original/Heatmap toggles, opacity, and enlarged viewing. See [explainability and verification](docs/EXPLAINABILITY.md). The notes describe relative score contributions in displayed-image coordinates; they do not identify medical findings, confirmed pneumonia locations, or improve model accuracy.
 
+**Current scope (13 November 2026):** finish the existing screening prototype with image-linked Grad-CAM explanations. No new dataset, training run, or external language model is required. Finding detection and medical report generation are **deferred**. See the [project handoff and final review](docs/PROJECT_HANDOFF.md); the [future finding-model plan](docs/FINDING_MODEL_NEXT_STEPS.md) is retained only if the team revisits it.
+
 **Patient workflow and current models:** see [patient management, file storage, and model inventory](docs/PATIENT_WORKFLOW_AND_STORAGE.md). The UI supports readable laptop text, expandable X-rays, patient follow-up/history, patient ID edits/deletion, and editable practitioner accounts. The repeated 93.75% entries were identical synthetic test uploads; those 10 scans and encrypted files have been cleared. Both latest Kaggle v2 model checkpoints are preserved locally; the original model remains the configured app default.
 
 ---

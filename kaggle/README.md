@@ -1,5 +1,7 @@
 # Train on Kaggle, run the app locally
 
+**Scope update (13 November 2026):** finding detection is **deferred**. You do not need another dataset or Kaggle run for the current explanation feature. The [finding-model plan](../docs/FINDING_MODEL_NEXT_STEPS.md) and [PulmoScan_Finding_Data_Check.ipynb](PulmoScan_Finding_Data_Check.ipynb) are retained for possible future work; that notebook checks annotations only and is not a required setup step. The existing classifier notebooks below are reproduction references.
+
 **Current status:** the v2 diagnostic results have been verified. The next scoring/calibration work can use the downloaded CSVs locally, without another Kaggle training run. See [calibration and external validation](../docs/CALIBRATION_AND_EXTERNAL_VALIDATION.md). Only the original dataset is available so far; independent validation remains pending.
 
 **Completed diagnostic reference:** [PulmoScan_Logit_Diagnostics.ipynb](PulmoScan_Logit_Diagnostics.ipynb) and [the diagnostic guide](../docs/LOGIT_DIAGNOSTICS.md) are retained to reproduce raw-logit ranking and saturation measurements. The returned diagnostic ZIP is already verified.

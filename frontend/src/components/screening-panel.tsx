@@ -34,7 +34,7 @@ export function ScreeningPanel({ scan, output, predicting, error, metadataWarnin
       {!predicting && output && <div className="screening-output" aria-live="polite">
         <p className="eyebrow">DenseNet121 AI Screening Output</p>
         <h3 className={`screening-result ${output.prediction === "NORMAL" ? "accent" : ""}`}>{output.prediction}</h3>
-        <p className="muted text-sm mt-2">{output.prediction === "PNEUMONIA" ? "Pneumonia pattern indicated. Clinical review is required." : "Normal pattern indicated. Correlate with clinical findings."}</p>
+        <p className="muted text-sm mt-2">{output.prediction === "PNEUMONIA" ? "The model selected the PNEUMONIA class. Review the original X-ray alongside this screening result." : "The model selected the NORMAL class. This screening result does not rule out abnormalities."}</p>
         <div className="screening-score"><span>Selected-class model score</span><strong>{formatModelScore(output.confidence)}</strong></div>
         <p className="score-explanation">Uncalibrated model score. This is not accuracy or the chance that a patient has pneumonia. Near 100% can reflect rounding or numerical saturation; high scores can still be wrong.</p>
         {[

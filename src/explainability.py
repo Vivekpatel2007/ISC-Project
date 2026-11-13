@@ -100,13 +100,14 @@ def describe_heatmap(normalized, target_class):
         rank = 'strongest' if number == 1 else ('second-strongest' if number == 2 else 'third-strongest')
         regions.append(dict(id=number, location=item['location'], title=f"{item['location'].capitalize()} image section",
                             bounds=item['bounds'], marker=item['marker'],
-                            description=f'This section has the {rank} average positive contribution among the '
-                                        f'image sections compared for the {target_class} score. Marker {number} '
-                                        'points to a high-contribution location within this section.'))
+                            description=f'This section has the {rank} average contribution to the '
+                                        f'{target_class} score among the image sections compared. Number {number} '
+                                        'marks a location with a high contribution inside this section.'))
     broad = float(np.mean(normalized >= .5)) >= .5
     locations = ', '.join(region['location'] for region in regions)
+    section_label = 'section' if len(regions) == 1 else 'sections'
     summary = (f'For the {target_class} output, stronger positive contributions appear in the {locations} '
-               'sections of the displayed image. ' +
+               f'{section_label} of the displayed image. ' +
                ('The higher-contribution pattern is broadly spread across the image. ' if broad else '') +
                'The numbered notes describe the contribution map; they do not identify which medical finding is present.')
     return dict(**base, regions=regions, distribution='broad' if broad else 'concentrated', summary=summary)

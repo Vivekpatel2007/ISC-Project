@@ -135,6 +135,7 @@ describe('Explanation image controls', () => {
     expect(svg?.querySelector('rect')).toHaveAttribute('x','66');
     fireEvent.click(screen.getByRole('button', {name:'Original'}));
     expect(document.querySelector('.region-marker-overlay')).toBeNull();
+    expect(second).toHaveAttribute('aria-pressed','false');
     fireEvent.click(second);
     expect(screen.getByRole('button', {name:'Heatmap'})).toHaveAttribute('aria-pressed','true');
     expect(document.querySelector('.region-marker-overlay')).not.toBeNull();
@@ -151,6 +152,12 @@ describe('Explanation image controls', () => {
     const svg = image.parentElement?.querySelector('.region-marker-overlay');
     expect(svg?.querySelector('[data-region="2"]')).toHaveAttribute('data-selected','true');
     expect(within(modal).getByRole('region', {name:'Image contribution explanation'})).toHaveTextContent('strong contribution');
+    expect(within(modal).getByText('Heatmap overlay · scroll to explore when zoomed')).toBeInTheDocument();
+    fireEvent.click(within(modal).getByRole('button', {name:'Original'}));
+    expect(within(modal).getByText('Original image · scroll to explore when zoomed')).toBeInTheDocument();
+    expect(within(modal).getByText(/Original radiograph without AI overlays/)).toBeInTheDocument();
+    expect(image.parentElement?.querySelector('.heatmap-overlay')).toBeNull();
+    expect(within(modal).getByRole('button', {name:'Highlight region 2: lower-right'})).toHaveAttribute('aria-pressed','false');
   });
 
   it('separates number labels when neighboring sections have adjacent contribution points', () => {
@@ -175,5 +182,29 @@ describe('Explanation image controls', () => {
     expect(screen.getByRole('region', {name:'Image contribution explanation'})).toHaveTextContent('No spatially informative');
     expect(document.querySelector('.region-marker-overlay')).toBeNull();
     expect(screen.queryByRole('button', {name:/Highlight region/})).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['PNEUMONIA', 'They do not confirm pneumonia in those areas.'],
+    ['NORMAL', 'They do not establish that the image is free of abnormalities.'],
+  ] as const)('grounds the reading guidance in the %s score without claiming a diagnosis', (target, limit) => {
+    render(<RadiographViewer src="blob:original" label="X-ray" explanation={{...regionalExplanation, target_class:target}} />);
+    const narrative = screen.getByRole('region', {name:'Image contribution explanation'});
+    expect(narrative.querySelector('.region-interpretation')).toHaveTextContent(`contributed to the ${target} score`);
+    expect(narrative.querySelector('.region-interpretation')).toHaveTextContent(limit);
+    const guide = within(narrative).getByText('How to read this explanation').closest('details');
+    expect(guide).not.toHaveAttribute('open');
+    expect(guide).toHaveTextContent('not greater disease severity');
+    expect(guide).toHaveTextContent('A high model score does not make the explanation more reliable');
+  });
+
+  it('distinguishes broad contributions from a missing spatial signal', () => {
+    const view = render(<RadiographViewer src="blob:original" label="X-ray" explanation={{...regionalExplanation, distribution:'broad'}} />);
+    expect(screen.getByText(/Broad contribution pattern/)).toBeInTheDocument();
+    view.rerender(<RadiographViewer src="blob:original" label="X-ray" explanation={{...regionalExplanation, status:'no_spatial_signal', distribution:'none'}} />);
+    expect(screen.queryByText(/Broad contribution pattern/)).not.toBeInTheDocument();
+    expect(screen.getByText(/no useful spatial pattern/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', {name:/Highlight region/})).not.toBeInTheDocument();
+    expect(screen.getByText(/No heatmap or numbered regions are available/)).toBeInTheDocument();
   });
 });

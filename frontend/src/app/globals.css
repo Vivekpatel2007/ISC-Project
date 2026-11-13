@@ -942,6 +942,8 @@ h3 {
 .region-number-disc.selected { fill: #087f70; stroke: #bdffe9; stroke-width: 3; }
 .region-number { fill: #fff; font-weight: 750; font-family: inherit; }
 .region-narrative { padding: 22px; border-top: 1px solid var(--line); background: var(--surface); }
+.region-interpretation { margin-top: 14px; padding: 12px 14px; border-left: 3px solid var(--accent); background: var(--surface-soft); border-radius: 0 8px 8px 0; color: var(--ink); font-size: 0.9375rem; line-height: 1.7; }
+.region-distribution { margin-top: 12px; color: var(--muted); font-size: 0.875rem; line-height: 1.65; }
 .region-summary { margin-top: 10px; font-size: 0.9375rem; color: var(--ink); line-height: 1.7; }
 .region-note-list { display: grid; list-style: none; gap: 10px; padding: 0; margin: 16px 0; }
 .region-note { display: flex; gap: 12px; width: 100%; padding: 14px; text-align: left; background: var(--surface-soft); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; }
@@ -950,7 +952,7 @@ h3 {
 .region-note strong { font-size: 0.9375rem; }
 .region-note > span:last-child > span { font-size: 0.875rem; line-height: 1.65; color: var(--muted); }
 .region-note-number { display: grid; place-items: center; flex-shrink: 0; align-self: flex-start; width: 28px; height: 28px; border-radius: 50%; color: var(--accent-text); background: var(--accent); font-size: 0.875rem; font-weight: 650; }
-.region-note-help { font-size: 0.875rem; color: var(--muted); }
+.region-reading-guide p { margin-top: 12px; font-size: 0.875rem; line-height: 1.7; color: var(--muted); }
 .explanation-action { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
 .radiograph-dialog { width: min(1200px, 96vw); max-width: 96vw; max-height: 96dvh; padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); }
 .radiograph-dialog::backdrop { background: #000c; }

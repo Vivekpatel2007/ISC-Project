@@ -1,5 +1,7 @@
 # PulmoScan: Complete User Guide, Page Map, Routing & Access Control Documentation
 
+Scope update (13 November 2026): [project handoff and final review](docs/PROJECT_HANDOFF.md). Keep the existing screening and image-linked explanation workflow; medical finding detection is deferred. No additional dataset, training run, or external language model is required.
+
 Optional explainability update: [Grad-CAM workflow and verification](docs/EXPLAINABILITY.md). Fresh screening results now offer **Explain prediction**, which generates a class/model-bound, authorized heatmap with opacity and zoom controls. It is a model-contribution visualization, not confirmed clinical localization. The new route is `POST /scans/{scan_id}/explain`.
 
 Current workflow update (11 November 2026): [patient follow-up, editable accounts, enlarged image viewing, storage, and model inventory](docs/PATIENT_WORKFLOW_AND_STORAGE.md). The new `/patients` page groups accessible scans by patient ID and shows the newest upload's screening status. Patients have no login accounts. Practitioner profile edits use `PUT /auth/me`; patient ID changes/deletion use `PUT`/`DELETE /patients/{patient_id}`; protected image viewing uses `GET /scans/{scan_id}/image`. The sections below preserve earlier architectural detail; use this linked guide for these updated workflows.

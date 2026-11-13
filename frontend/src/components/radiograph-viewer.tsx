@@ -62,12 +62,12 @@ export function RadiographViewer({ src, label, explanation }: { src: string; lab
       </span>
       <span><Expand size={18} /> Click to enlarge</span>
     </button>
-    {explanation && <RegionNarrative explanation={explanation} selected={activeRegion} onSelect={selectRegion} />}
+    {explanation && <RegionNarrative explanation={explanation} selected={overlayEnabled ? activeRegion : null} onSelect={selectRegion} />}
     <dialog ref={dialog} className="radiograph-dialog" aria-label={`${label} enlarged view`}
       onCancel={() => setExpanded(false)} onClose={() => setExpanded(false)}
       onClick={(event) => { if (event.target === event.currentTarget) setExpanded(false); }}>
       <div className="viewer-toolbar">
-        <div><h2>{label}</h2><p>Original image · scroll to explore when zoomed</p></div>
+        <div><h2>{label}</h2><p>{overlayEnabled ? 'Heatmap overlay' : 'Original image'} · scroll to explore when zoomed</p></div>
         <button type="button" className="button button-secondary" aria-label="Close enlarged image" onClick={() => setExpanded(false)}><X size={20} /></button>
       </div>
       <div className="viewer-controls" role="group" aria-label="Image zoom">
@@ -86,8 +86,8 @@ export function RadiographViewer({ src, label, explanation }: { src: string; lab
           {overlayEnabled && explanation && <RegionMarkers explanation={explanation} selected={activeRegion} />}
         </div>}
       </div>
-      {expanded && explanation && <RegionNarrative explanation={explanation} selected={activeRegion} onSelect={selectRegion} />}
-      <p className="viewer-caption">{explanation ? `Grad-CAM for ${explanation.target_class}. Relative model contribution, not a disease outline.` : 'Original radiograph without AI overlays.'} Press Escape to close.</p>
+      {expanded && explanation && <RegionNarrative explanation={explanation} selected={overlayEnabled ? activeRegion : null} onSelect={selectRegion} />}
+      <p className="viewer-caption">{overlayEnabled && explanation ? `Grad-CAM for ${explanation.target_class}. Relative model contribution, not a disease outline.` : 'Original radiograph without AI overlays.'} Press Escape to close.</p>
     </dialog>
   </>;
 }
