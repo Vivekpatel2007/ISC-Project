@@ -1,5 +1,7 @@
 # Backend lifecycle, readiness, and model identity
 
+Follow-up: [final application review, 13 November 2026](FINAL_REVIEW_2026-11-13.md) documents the current runtime, authentication/upload/privacy fixes, dependency audit and final verification. The older measurements below are historical checks.
+
 This step improves backend reliability and test isolation. It does not change the loaded model's weights, threshold, calibration, or measured classification performance. Frontend/backend startup and neural training remain manual.
 
 Subsequent user-requested cleanup and workflow update: [patient management and model inventory](PATIENT_WORKFLOW_AND_STORAGE.md). The 10 synthetic scans mentioned in this historical verification were later explicitly deleted along with their encrypted files. Account settings, protected image viewing, and patient follow-up/rename/deletion are now available.

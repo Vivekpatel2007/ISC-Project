@@ -16,6 +16,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.api.auth import hash_password
@@ -25,11 +26,13 @@ from src.api.config import (
     ENABLE_DOCS,
     ENFORCE_HTTPS,
     IS_PRODUCTION,
+    MAX_IMAGE_SIZE_BYTES,
     SEED_DEMO_USERS,
     validate_production_config,
 )
 from src.api.dependencies import get_db, get_inference_engine, get_storage
 from src.api.model_service import ModelInferenceError
+from src.api.request_limits import RequestBodyLimitMiddleware
 from src.api.routers import auth_router, health_router, scans_router, patients_router
 from src.security.exceptions import (
     AuthenticationError,
@@ -53,6 +56,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        response.headers['Cache-Control'] = 'no-store, private'
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; img-src 'self' data: blob:; "
             "script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
@@ -119,6 +123,10 @@ def create_app() -> FastAPI:
         lifespan=lifespan
     )
 
+    # Multipart headers/fields get 64 KiB beyond the actual image limit. The
+    # handler still enforces the exact image-byte limit after parsing.
+    app.add_middleware(RequestBodyLimitMiddleware, max_body_bytes=MAX_IMAGE_SIZE_BYTES + 64 * 1024)
+
     # 1. Security Headers Middleware
     app.add_middleware(SecurityHeadersMiddleware)
 
@@ -132,6 +140,14 @@ def create_app() -> FastAPI:
     )
 
     # 3. Exception Handlers (Sanitized for zero leakage)
+    @app.exception_handler(RequestValidationError)
+    async def request_validation_handler(request: Request, exc: RequestValidationError):
+        # Pydantic includes the rejected input by default, including passwords.
+        return JSONResponse(status_code=422, content={'detail': [
+            {key: error[key] for key in ('type', 'loc', 'msg') if key in error}
+            for error in exc.errors()
+        ]})
+
     @app.exception_handler(ScanNotFoundError)
     async def scan_not_found_handler(request: Request, exc: ScanNotFoundError):
         return JSONResponse(
@@ -163,7 +179,7 @@ def create_app() -> FastAPI:
     @app.exception_handler(ModelInferenceError)
     async def inference_error_handler(request: Request, exc: ModelInferenceError):
         return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             content={"detail": f"Model inference error: {str(exc)}"}
         )
 

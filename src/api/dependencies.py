@@ -14,9 +14,8 @@ from threading import RLock
 from typing import Any, Callable, Dict, Optional
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
 
-from src.api.auth import decode_access_token
+from src.api.auth import bearer_token, decode_access_token
 from src.api.config import (
     IMAGE_ENCRYPTION_KEY,
     IS_PRODUCTION,
@@ -29,8 +28,6 @@ from src.api.model_service import DenseNetInferenceEngine
 from src.security.database import MetadataDB
 from src.security.key_manager import base64_to_key, generate_key, load_key_from_env
 from src.security.secure_storage import SecureImageStorage
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 # Shared lazy instances
 _db_instance: Optional[MetadataDB] = None
@@ -111,7 +108,7 @@ def get_initialized_inference_engine() -> Optional[DenseNetInferenceEngine]:
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    token: str = Depends(bearer_token),
     db: MetadataDB = Depends(get_db)
 ) -> Dict[str, Any]:
     """

@@ -174,7 +174,7 @@ def verify_scan_access(scan_record: Dict[str, Any], current_user: Dict[str, Any]
 # Endpoints
 # =====================================================================
 @router.post("", response_model=ScanMetadataResponse, status_code=status.HTTP_201_CREATED)
-async def upload_scan(
+def upload_scan(
     file: UploadFile = File(..., description="Chest X-Ray image file (PNG/JPEG)"),
     patient_id: str = Form(..., description="Pseudonymous patient identifier (e.g. ANON-10492)"),
     current_user: Dict[str, Any] = Depends(require_role("doctor", "radiologist", "admin")),
@@ -190,12 +190,14 @@ async def upload_scan(
         clean_patient_id = validate_patient_id(patient_id)
     except InvalidIdentifierError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(e)
         ) from None
 
     # 2. Read bytes safely
-    image_bytes = await file.read(MAX_IMAGE_SIZE_BYTES + 1)
+    # A synchronous endpoint runs decoding, encryption and SQLite IO in FastAPI's
+    # worker pool, keeping the event loop free for other requests.
+    image_bytes = file.file.read(MAX_IMAGE_SIZE_BYTES + 1)
     if len(image_bytes) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -204,7 +206,7 @@ async def upload_scan(
 
     if len(image_bytes) > MAX_IMAGE_SIZE_BYTES:
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
             detail=f"Uploaded image exceeds the maximum limit ({MAX_IMAGE_SIZE_BYTES} bytes)."
         )
 
@@ -226,9 +228,9 @@ async def upload_scan(
         )
         return ScanMetadataResponse(**record)
     except MaxFileSizeExceededError as e:
-        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail=str(e)) from None
-    except StorageError as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Secure storage error: {str(e)}") from None
+        raise HTTPException(status_code=status.HTTP_413_CONTENT_TOO_LARGE, detail=str(e)) from None
+    except StorageError:
+        raise HTTPException(status_code=503, detail='Secure image storage is unavailable. Please retry.') from None
 
 
 @router.get("", response_model=List[ScanMetadataResponse])
@@ -363,14 +365,14 @@ def predict_scan(
             status_code=status.HTTP_409_CONFLICT,
             detail="Security Error: Recovered image failed SHA-256 integrity verification."
         ) from None
-    except StorageError as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from None
+    except StorageError:
+        raise HTTPException(status_code=503, detail='Stored image is unavailable. Please retry or contact your administrator.') from None
 
     # Run in-memory DenseNet121 inference
     try:
         pred_result = engine.predict(decrypted_bytes)
     except InvalidImagePayloadError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Image decoding error: {str(e)}") from None
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"Image decoding error: {str(e)}") from None
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Model inference failed: {type(e).__name__}") from None
 

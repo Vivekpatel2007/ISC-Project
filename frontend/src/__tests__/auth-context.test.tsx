@@ -19,6 +19,7 @@ vi.mock('next/navigation', () => ({
 
 function TestConsumer() {
   const { user, token, role, isAuthenticated, isLoading, login, logout, refreshProfile } = useAuth();
+  const [error, setError] = React.useState('');
   return (
     <div>
       <span data-testid="auth-status">{isAuthenticated ? 'LOGGED_IN' : 'LOGGED_OUT'}</span>
@@ -30,7 +31,8 @@ function TestConsumer() {
       <button onClick={() => login('doctor1', 'DoctorPassword123!')}>Login</button>
       <button onClick={() => login('radiologist1', 'RadioPassword123!')}>Login radiologist</button>
       <button onClick={logout}>Logout</button>
-      <button onClick={refreshProfile}>Refresh profile</button>
+      <button onClick={() => refreshProfile().catch((cause) => setError(cause.message))}>Refresh profile</button>
+      <span data-testid="profile-error">{error}</span>
     </div>
   );
 }
@@ -196,5 +198,50 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('username')).toHaveTextContent('radiologist1');
     expect(screen.getByTestId('role')).toHaveTextContent('radiologist');
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  async function signIn() {
+    vi.spyOn(apiClient, 'login').mockResolvedValue({access_token:'doctor-token', token_type:'bearer', role:'doctor', username:'doctor1', expires_in_minutes:30});
+    vi.spyOn(apiClient, 'getMe').mockResolvedValue({user_id:'doctor-id', username:'doctor1', role:'doctor'});
+    render(<AuthProvider><TestConsumer /></AuthProvider>);
+    await act(async () => { screen.getByText('Login', {exact:true}).click(); });
+  }
+
+  it('clears protected page state when the active bearer token is rejected', async () => {
+    await signIn();
+    fireEvent.change(screen.getByLabelText('Session notes'), {target:{value:'Private notes'}});
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ok:false, status:401, json:async () => ({detail:'Expired token'})}));
+    await act(async () => { await apiClient.listScans('doctor-token').catch(() => undefined); });
+    expect(screen.getByTestId('auth-status')).toHaveTextContent('LOGGED_OUT');
+    expect(screen.getByLabelText('Session notes')).toHaveValue('');
+    expect(mockReplace).toHaveBeenLastCalledWith('/login/staff');
+    vi.unstubAllGlobals();
+  });
+
+  it('does not let a rejected request for an old token sign out the current session', async () => {
+    await signIn();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ok:false, status:401, json:async () => ({detail:'Expired old token'})}));
+    await act(async () => { await apiClient.listScans('different-old-token').catch(() => undefined); });
+    expect(screen.getByTestId('auth-status')).toHaveTextContent('LOGGED_IN');
+    vi.unstubAllGlobals();
+  });
+
+  it('expires an idle session and clears private page state without waiting for a request', async () => {
+    vi.useFakeTimers();
+    try {
+      await signIn();
+      fireEvent.change(screen.getByLabelText('Session notes'), {target:{value:'Private notes'}});
+      act(() => { vi.advanceTimersByTime(30 * 60000); });
+      expect(screen.getByTestId('auth-status')).toHaveTextContent('LOGGED_OUT');
+      expect(screen.getByLabelText('Session notes')).toHaveValue('');
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('preserves the session when a profile refresh encounters a network failure', async () => {
+    await signIn();
+    vi.mocked(apiClient.getMe).mockRejectedValueOnce(new Error('Network unavailable'));
+    await act(async () => { screen.getByText('Refresh profile').click(); });
+    expect(screen.getByTestId('auth-status')).toHaveTextContent('LOGGED_IN');
+    expect(screen.getByTestId('profile-error')).toHaveTextContent('Network unavailable');
   });
 });

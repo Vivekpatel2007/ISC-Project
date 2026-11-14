@@ -19,7 +19,7 @@ from typing import Any, Callable, Dict, List, Optional
 import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.api.config import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
@@ -28,8 +28,20 @@ from src.api.config import (
 )
 from src.security.database import MetadataDB
 
-# OAuth2 password bearer scheme for swagger/openapi integration
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+# Login accepts JSON, so document bearer-token authorization rather than an
+# OAuth2 password form that this API does not implement.
+_bearer = HTTPBearer(auto_error=False, scheme_name='BearerAuth', bearerFormat='JWT')
+
+
+def bearer_token(credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer)) -> str:
+    if credentials is None:
+        raise HTTPException(status_code=401, detail='Not authenticated.', headers={'WWW-Authenticate':'Bearer'})
+    return credentials.credentials
+
+
+oauth2_scheme = bearer_token  # Compatibility for the older dependency factory below.
+# Valid cost-12 hash for comparable bcrypt work when the username is unknown.
+DUMMY_PASSWORD_HASH = '$2b$12$l9qosfdu4OPtCslUhjD9Quq9Zu9Zb6rKcf2cwcYOeR.5HdYWB.nG.'
 
 
 # =====================================================================
@@ -39,8 +51,8 @@ def hash_password(password: str) -> str:
     """
     Hash a plaintext password using bcrypt with a secure random salt.
     """
-    if not isinstance(password, str) or len(password) < 6:
-        raise ValueError("Password must be at least 6 characters.")
+    if not isinstance(password, str) or len(password) < 6 or len(password.encode('utf-8')) > 72:
+        raise ValueError("Password must be at least 6 characters and at most 72 UTF-8 bytes.")
     salt = bcrypt.gensalt(rounds=12)
     hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
     return hashed.decode("utf-8")
@@ -70,6 +82,7 @@ def create_access_token(
     Generate a signed, short-lived JSON Web Token (JWT).
     """
     to_encode = data.copy()
+    to_encode.setdefault('auth_version', 0)
     now = datetime.now(timezone.utc)
     if expires_delta:
         expire = now + expires_delta
@@ -94,8 +107,12 @@ def decode_access_token(token: str) -> Dict[str, Any]:
         payload = jwt.decode(
             token,
             JWT_SECRET_KEY,
-            algorithms=[JWT_ALGORITHM]
+            algorithms=[JWT_ALGORITHM],
+            options={'require': ['exp', 'iat', 'nbf', 'sub', 'user_id', 'auth_version']},
         )
+        if (not isinstance(payload['user_id'], str) or not payload['user_id']
+                or type(payload['auth_version']) is not int or payload['auth_version'] < 0):
+            raise jwt.InvalidTokenError('Invalid identity claims.')
         return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(
@@ -103,7 +120,7 @@ def decode_access_token(token: str) -> Dict[str, Any]:
             detail="Authentication token has expired. Please log in again.",
             headers={"WWW-Authenticate": "Bearer"},
         ) from None
-    except jwt.InvalidTokenError:
+    except (jwt.InvalidTokenError, ValueError, TypeError, OverflowError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or malformed authentication token.",
@@ -148,16 +165,8 @@ def get_current_user_factory(db_getter: Callable[[], MetadataDB]):
 
 
 def require_roles(*allowed_roles: str):
-    """
-    Dependency generator enforcing role-based access control.
-    Example: Depends(require_roles("radiologist", "admin"))
-    """
-    def role_checker(current_user: Dict[str, Any] = Depends(oauth2_scheme)) -> None:
-        user_role = current_user.get("role") if isinstance(current_user, dict) else None
-        if user_role and user_role not in allowed_roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Forbidden: role '{user_role}' is not authorized to access this resource."
-            )
-    return role_checker
+    """Compatibility alias; always authenticate and check the database-backed role."""
+    # Import when the factory is used to avoid the auth/dependencies import cycle.
+    from src.api.dependencies import require_role
+    return require_role(*allowed_roles)
 

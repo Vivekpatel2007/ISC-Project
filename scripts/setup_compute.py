@@ -33,8 +33,8 @@ class Profile:
 
 
 CPU = Profile('cpu')
-CUDA124 = Profile('cu124')
-CUDA128 = Profile('cu128')
+CUDA126 = Profile('cu126')
+CUDA130 = Profile('cu130')
 LEGACY_CAPABILITIES = {'7.5', '8.0', '8.6', '8.9', '9.0'}
 BLACKWELL_CAPABILITIES = {'10.0', '12.0'}
 
@@ -78,11 +78,11 @@ def choose_profile(gpus, requested='auto', system=None):
             continue
         capability = gpu['capability']
         if capability in LEGACY_CAPABILITIES:
-            profile = CUDA124
-            minimum = '551.61' if system == 'Windows' else '550.54.14'
+            profile = CUDA126
+            minimum = '560.76' if system == 'Windows' else '560.28.03'
         elif capability in BLACKWELL_CAPABILITIES:
-            profile = CUDA128
-            minimum = '570.65' if system == 'Windows' else '570.26'
+            profile = CUDA130
+            minimum = '580.88' if system == 'Windows' else '580.65.06'
         else:
             continue
         if version_tuple(gpu['driver']) >= version_tuple(minimum):

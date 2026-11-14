@@ -119,6 +119,7 @@ class DenseNetInferenceEngine:
             valid_norm = False
         if not valid_norm:
             raise ModelInferenceError("Checkpoint normalization requires three finite means and positive standard deviations.")
+        self.norm = {'mean': [float(value) for value in mean], 'std': [float(value) for value in std]}
         self.threshold = validate_threshold(ckpt.get("threshold", 0.40))
         self.preprocessing = ckpt.get("preprocessing", {"resize_mode": "stretch"})
         if not isinstance(self.preprocessing, dict) or self.preprocessing.get("resize_mode") not in {"stretch", "letterbox"}:

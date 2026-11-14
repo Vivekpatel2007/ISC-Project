@@ -1,7 +1,7 @@
 # Compatible baseline used for this Windows development setup.
 # scripts/setup_compute.py selects matching torch/torchvision builds separately.
 # Keep these backend constraints shared by CPU and CUDA profiles.
-fastapi==0.115.12
+fastapi==0.162.6
 pydantic==2.10.6
 pydantic-core==2.27.2
-starlette==0.46.2
+starlette==1.10.0

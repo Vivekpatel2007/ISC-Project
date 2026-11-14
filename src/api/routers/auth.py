@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, ConfigDict
 
-from src.api.auth import create_access_token, verify_password, hash_password
+from src.api.auth import create_access_token, verify_password, hash_password, DUMMY_PASSWORD_HASH
 from src.api.config import ACCESS_TOKEN_EXPIRE_MINUTES
 from src.api.dependencies import get_current_user, get_db
 from src.api.rate_limiter import rate_limit_login
@@ -24,7 +24,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 class LoginRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=32, description="Staff username")
-    password: str = Field(..., min_length=6, description="Account password")
+    password: str = Field(..., min_length=6, max_length=72, description="Account password")
 
 
 class TokenResponse(BaseModel):
@@ -66,7 +66,7 @@ def login(
     user = db.get_user_by_username(credentials.username)
     if not user:
         # Constant-time dummy check to mitigate user enumeration timing attacks
-        verify_password("dummy", "$2b$12$e8Yn5VfU0W9X1lB0kL4ISeN4dK9J6rS6Yn5VfU0W9X1lB0kL4ISe")
+        verify_password(credentials.password, DUMMY_PASSWORD_HASH)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password.",

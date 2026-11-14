@@ -16,10 +16,10 @@ def gpu(capability='7.5', driver='621.14', memory=4096):
 
 @pytest.mark.parametrize('gpus,expected', [
     ([], setup.CPU),
-    ([gpu()], setup.CUDA124),
-    ([gpu('8.9')], setup.CUDA124),
-    ([gpu('12.0')], setup.CUDA128),
-    ([gpu('10.0')], setup.CUDA128),
+    ([gpu()], setup.CUDA126),
+    ([gpu('8.9')], setup.CUDA126),
+    ([gpu('12.0')], setup.CUDA130),
+    ([gpu('10.0')], setup.CUDA130),
     ([gpu(driver='500.00')], setup.CPU),
     ([gpu(memory=2048)], setup.CPU),
     ([gpu('6.1')], setup.CPU),
@@ -36,17 +36,17 @@ def test_explicit_cpu_and_strict_cuda():
 
 
 def test_driver_cutoffs_are_platform_specific():
-    assert setup.choose_profile([gpu(driver='551.60')], system='Windows')[0] == setup.CPU
-    assert setup.choose_profile([gpu(driver='551.61')], system='Windows')[0] == setup.CUDA124
-    assert setup.choose_profile([gpu(driver='550.54.14')], system='Linux')[0] == setup.CUDA124
-    assert setup.choose_profile([gpu('12.0', driver='570.64')], system='Windows')[0] == setup.CPU
+    assert setup.choose_profile([gpu(driver='560.75')], system='Windows')[0] == setup.CPU
+    assert setup.choose_profile([gpu(driver='560.76')], system='Windows')[0] == setup.CUDA126
+    assert setup.choose_profile([gpu(driver='560.28.03')], system='Linux')[0] == setup.CUDA126
+    assert setup.choose_profile([gpu('12.0', driver='580.87')], system='Windows')[0] == setup.CPU
 
 
 def test_existing_cpu_build_is_replaced_by_an_explicit_cuda_build():
-    assert setup.CUDA124.packages == ['torch==2.5.1+cu124', 'torchvision==0.20.1+cu124']
+    assert setup.CUDA126.packages == ['torch==2.14.1+cu126', 'torchvision==0.29.1+cu126']
 
 
-@pytest.mark.parametrize('profile', [setup.CPU, setup.CUDA124, setup.CUDA128])
+@pytest.mark.parametrize('profile', [setup.CPU, setup.CUDA126, setup.CUDA130])
 def test_shared_dependency_install_preserves_selected_profile(monkeypatch, profile, capsys):
     pip = Mock()
     monkeypatch.setattr(setup, 'pip', pip)
@@ -64,7 +64,7 @@ def test_auto_restores_cpu_when_cuda_execution_fails(monkeypatch):
     verify = Mock(side_effect=[subprocess.CalledProcessError(1, 'probe'), None, None])
     monkeypatch.setattr(setup, 'pip', pip)
     monkeypatch.setattr(setup, 'verify', verify)
-    assert setup.install(setup.CUDA124, 'auto') == setup.CPU
+    assert setup.install(setup.CUDA126, 'auto') == setup.CPU
     assert pip.call_args_list[1].args[1:3] == tuple(setup.CPU.packages)
     assert verify.call_args_list[-1].args == (setup.CPU,)
 
@@ -73,7 +73,7 @@ def test_strict_cuda_reports_failure_without_silently_switching(monkeypatch):
     pip = Mock(side_effect=subprocess.CalledProcessError(1, 'pip'))
     monkeypatch.setattr(setup, 'pip', pip)
     with pytest.raises(subprocess.CalledProcessError):
-        setup.install(setup.CUDA124, 'cuda')
+        setup.install(setup.CUDA126, 'cuda')
     assert pip.call_count == 1
 
 
@@ -91,7 +91,7 @@ def test_gpu_query_parses_multiple_cards(monkeypatch):
         stdout='0, GTX 1650, 4096, 7.5, 621.14\n1, RTX 5090, 32768, 12.0, 621.14\n')))
     gpus, _ = setup.inspect_gpus()
     assert len(gpus) == 2
-    assert setup.choose_profile(gpus, system='Windows')[0] == setup.CUDA128
+    assert setup.choose_profile(gpus, system='Windows')[0] == setup.CUDA130
 
 
 def test_default_setup_only_plans_and_never_runs_pip(monkeypatch, capsys):

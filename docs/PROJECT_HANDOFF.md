@@ -2,6 +2,8 @@
 
 Decision recorded 13 November 2026: **finish and review the current educational screening prototype, then freeze feature scope.** Defer the restricted finding dataset, object detector and generated medical reports unless the team chooses to resume them. No new download, training run or dependency is required for the current explanation feature.
 
+The subsequent [final application review](FINAL_REVIEW_2026-11-13.md) records authentication, upload, privacy and dependency fixes. Maintained dependency pins and the local runtime were updated; no dataset or retraining is needed.
+
 ## What the project demonstrates
 
 - Role-based practitioner access, protected image retrieval and encrypted scan storage.
@@ -49,9 +51,9 @@ The existing configured DenseNet121 remains active; the downloaded Kaggle candid
 
 Verification uses `python -m pytest tests -q` (or `python -m pytest -q`, now configured to discover that folder), `npm.cmd test`, `npm.cmd run lint`, and `npm.cmd run build` in `frontend/` for the npm checks. These do not replace your browser review. The old manual `src/evaluate_test.py` evaluator is outside this automated suite; on this PC its scikit-learn import currently fails with **"An Application Control policy has blocked this file"** for `_radius_neighbors`. That optional legacy evaluator remains unavailable unless the installed dependency/security-policy issue is resolved. The app inference and Grad-CAM paths do not import it; no Windows security policy was modified.
 
-Results on 13 November 2026: **210 backend tests and 99 frontend tests passed; lint and the production build passed.** Root-level collection also finds the same 210 tests after the discovery correction. Backend warnings were the existing Starlette/AnyIO deprecation and the intentional Pillow decompression-bomb test. Frontend tests emit the existing Vite configuration-format warning. No live browser review, app server startup or real model training was performed by the assistant.
+Final results on 13 November 2026: **232 backend tests and 106 frontend tests passed; lint, the production build and development preflight passed.** The final review also records eight CPU/CUDA prediction/explanation checks and clean dependency checks. The Vite configuration-format warning is resolved. Remaining warnings are the Starlette `httpx` test adapter deprecation and the intentional Pillow decompression-bomb test. No live browser review, app server startup or real model training was performed by the assistant.
 
-If the requirement is "secure educational X-ray screening with reviewable AI output," I recommend ending feature development after this final review. If the requirement is "reliable medical diagnosis and finding localization," that goal remains unmet and requires a separate labelled-data and clinical-validation phase. Deployment also needs the remaining dependency/security findings in [the backend review](BACKEND_REVIEW.md) resolved.
+If the requirement is "secure educational X-ray screening with reviewable AI output," I recommend ending feature development after this final review. If the requirement is "reliable medical diagnosis and finding localization," that goal remains unmet and requires a separate labelled-data and clinical-validation phase. The old runtime advisory findings were addressed by the final dependency update; this is not a clinical or production-deployment certification.
 
 An accurate resume statement is: **Built a role-based chest X-ray screening application with encrypted image storage, reproducible PyTorch/Kaggle experiments, and on-demand Grad-CAM explanations with linked image-region notes and automated checks.** Use only measured metrics with their exact dataset/protocol; avoid claims of doctor-level diagnosis or clinical validation.
 

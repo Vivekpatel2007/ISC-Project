@@ -1,5 +1,7 @@
 # PulmoScan: Complete User Guide, Page Map, Routing & Access Control Documentation
 
+Final maintenance update (13 November 2026): [application review and verification](docs/FINAL_REVIEW_2026-11-13.md). Sessions expire and clear private page state, uploads have an early size limit, and the maintained runtime/dependency pins were updated. API documentation now uses **BearerAuth**: call `POST /auth/login` with JSON, then paste the returned access token into **Authorize**. Older OAuth2 password-form descriptions below are historical; the application login remains JSON.
+
 Scope update (13 November 2026): [project handoff and final review](docs/PROJECT_HANDOFF.md). Keep the existing screening and image-linked explanation workflow; medical finding detection is deferred. No additional dataset, training run, or external language model is required.
 
 Optional explainability update: [Grad-CAM workflow and verification](docs/EXPLAINABILITY.md). Fresh screening results now offer **Explain prediction**, which generates a class/model-bound, authorized heatmap with opacity and zoom controls. It is a model-contribution visualization, not confirmed clinical localization. The new route is `POST /scans/{scan_id}/explain`.

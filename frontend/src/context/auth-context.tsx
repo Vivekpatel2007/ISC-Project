@@ -11,9 +11,9 @@
  * 4. All authorization checks are enforced by the backend on every API request.
  */
 
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, onUnauthorized } from '@/lib/api-client';
 import { ApiError, UserProfile, UserRole, AccountUpdate } from '@/lib/types';
 import { getLoginPath, portalForRole, rememberLoginPortal, type LoginPortal } from '@/lib/login-portal';
 
@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [sessionVersion, setSessionVersion] = useState(0);
   const authAttempt = useRef(0);
   const currentToken = useRef<string | null>(null);
@@ -49,9 +50,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     setUser(null);
     setIsLoading(false);
+    setExpiresAt(null);
     setSessionVersion((version) => version + 1);
     router.replace(loginPath);
   }, [router, user]);
+
+  useEffect(() => onUnauthorized((rejectedToken) => {
+    if (currentToken.current === rejectedToken) logout();
+  }), [logout]);
+
+  useEffect(() => {
+    if (!token || expiresAt === null) return;
+    const checkExpiry = () => { if (Date.now() >= expiresAt) logout(); };
+    const timer = window.setTimeout(logout, Math.max(0, Math.min(expiresAt - Date.now(), 2147483647)));
+    window.addEventListener('focus', checkExpiry);
+    document.addEventListener('visibilitychange', checkExpiry);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('focus', checkExpiry);
+      document.removeEventListener('visibilitychange', checkExpiry);
+    };
+  }, [token, expiresAt, logout]);
 
   const login = useCallback(
     async (username: string, password: string, portal?: LoginPortal, signal?: AbortSignal) => {
@@ -78,6 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         rememberLoginPortal(accountPortal);
         currentToken.current = accessToken;
         setToken(accessToken);
+        setExpiresAt(Date.now() + tokenResp.expires_in_minutes * 60000);
         setUser(profile);
         router.replace('/');
       } catch (err) {
@@ -85,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Clear state on failed attempt
         currentToken.current = null;
         setToken(null);
+        setExpiresAt(null);
         setUser(null);
         throw err;
       } finally {
@@ -100,8 +121,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const profile = await apiClient.getMe(token);
       if (attempt === authAttempt.current && currentToken.current === token) setUser(profile);
-    } catch {
-      if (attempt === authAttempt.current && currentToken.current === token) logout();
+    } catch (error) {
+      if (attempt === authAttempt.current && currentToken.current === token) {
+        if (error instanceof ApiError && error.status === 401) logout();
+        else throw error;
+      }
     }
   }, [token, logout]);
 
@@ -113,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     authAttempt.current += 1;
     currentToken.current = updated.access_token;
     setToken(updated.access_token);
+    setExpiresAt(Date.now() + updated.expires_in_minutes * 60000);
     setUser(updated.user);
   }, [token]);
 

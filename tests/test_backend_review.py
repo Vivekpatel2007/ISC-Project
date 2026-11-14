@@ -5,7 +5,7 @@ import io
 from pathlib import Path
 from threading import Lock
 import time
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import Mock
 
 from fastapi import HTTPException
 from PIL import Image
@@ -76,6 +76,24 @@ def test_invalid_checkpoint_metadata_is_rejected_before_model_construction(tmp_p
         DenseNetInferenceEngine(checkpoint)
 
 
+def test_numeric_normalization_metadata_is_converted_before_preprocessing(tmp_path, monkeypatch):
+    from src.api import model_service
+    class TinyModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.classifier = torch.nn.Linear(3, 2)
+    checkpoint = tmp_path / 'numeric-normalization.pth'
+    torch.save({'model_state_dict': TinyModel().state_dict(), 'normalization': {
+        'mean': ['0.5', '0.5', '0.5'], 'std': ['0.25', '0.25', '0.25'],
+    }}, checkpoint)
+    monkeypatch.setattr(model_service, 'select_device', lambda: torch.device('cpu'))
+    monkeypatch.setattr(model_service.models, 'densenet121', lambda **kwargs: TinyModel())
+    engine = DenseNetInferenceEngine(checkpoint)
+    transformed = engine.transform(Image.new('RGB', (64, 64), (128, 128, 128)))
+    assert transformed.shape == (3, 224, 224)
+    assert torch.isfinite(transformed).all()
+
+
 def test_truncated_jpeg_that_passes_header_verification_returns_validation_error():
     buffer = io.BytesIO()
     Image.new('L', (64, 64), 100).save(buffer, format='JPEG')
@@ -133,14 +151,13 @@ def test_shared_model_forward_passes_do_not_overlap():
 
 
 def test_upload_read_is_bounded_before_validation(monkeypatch):
-    import asyncio
     from src.api.routers import scans
     monkeypatch.setattr(scans, 'MAX_IMAGE_SIZE_BYTES', 8)
-    upload = Mock(read=AsyncMock(return_value=b'x' * 9))
+    upload = Mock(file=Mock(read=Mock(return_value=b'x' * 9)))
     storage, engine = Mock(), Mock()
     with pytest.raises(HTTPException) as error:
-        asyncio.run(scans.upload_scan(upload, 'ANON-001', {'username': 'doctor'}, storage, engine))
+        scans.upload_scan(upload, 'ANON-001', {'username': 'doctor'}, storage, engine)
     assert error.value.status_code == 413
-    upload.read.assert_awaited_once_with(9)
+    upload.file.read.assert_called_once_with(9)
     engine.validate_and_decode_image.assert_not_called()
     storage.store_image.assert_not_called()

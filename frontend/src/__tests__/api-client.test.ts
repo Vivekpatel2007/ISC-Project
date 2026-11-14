@@ -86,6 +86,26 @@ describe('apiClient', () => {
     );
   });
 
+  it('does not misreport an aborted request as a backend connection failure', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const aborted = new DOMException('Cancelled', 'AbortError');
+    global.fetch = vi.fn().mockRejectedValue(aborted);
+    await expect(apiClient.getMe('token', controller.signal)).rejects.toBe(aborted);
+  });
+
+  it('disables browser caching for account and scan metadata', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ok:true, status:200, json:async () => ({})});
+    await apiClient.getMe('token');
+    await apiClient.listScans('token');
+    expect(vi.mocked(fetch).mock.calls.every((call) => call[1]?.cache === 'no-store')).toBe(true);
+  });
+
+  it('distinguishes malformed backend JSON from a connection failure', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ok:true, status:200, json:async () => {throw new SyntaxError('Invalid JSON');}});
+    await expect(apiClient.getMe('token')).rejects.toThrow('unreadable response');
+  });
+
   it.each(['login', 'profile'])('forwards the cancellation signal for the %s request', async (endpoint) => {
     const controller = new AbortController();
     global.fetch = vi.fn().mockResolvedValue({

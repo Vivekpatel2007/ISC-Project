@@ -19,7 +19,7 @@ def main() -> int:
             importlib.import_module(module)
     except Exception as error:
         print(f'Backend dependency check failed ({type(error).__name__}).', file=sys.stderr)
-        print('Install the Python dependencies using README.md. For Windows application-control errors, use the documented CPU package versions.', file=sys.stderr)
+        print('Install the Python dependencies using README.md. A Windows Application Control DLL block may require installation repair or help from the device administrator; changing CPU/GPU profiles alone may not resolve it.', file=sys.stderr)
         return 1
 
     from dotenv import load_dotenv

@@ -12,6 +12,7 @@ import os
 import sys
 import threading
 import time
+import math
 from collections import defaultdict
 from typing import Dict, List, Optional
 from fastapi import HTTPException, Request, status
@@ -24,10 +25,14 @@ class SlidingWindowRateLimiter:
     Tracks timestamps of requests within a sliding window.
     Expired timestamps outside the window are automatically purged.
     """
-    def __init__(self, max_requests: int, window_seconds: int, name: str = "default"):
+    def __init__(self, max_requests: int, window_seconds: int, name: str = "default", max_keys: int = 10000):
+        if min(max_requests, window_seconds, max_keys) <= 0:
+            raise ValueError('Rate limiter limits must be positive.')
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self.name = name
+        self.max_keys = max_keys
+        self._next_cleanup = 0.
         self._history: Dict[str, List[float]] = defaultdict(list)
         self._lock = threading.Lock()
         self._enabled = True
@@ -58,6 +63,15 @@ class SlidingWindowRateLimiter:
         cutoff = now - self.window_seconds
 
         with self._lock:
+            if now >= self._next_cleanup or (key not in self._history and len(self._history) >= self.max_keys):
+                self._history = defaultdict(list, {
+                    client: [stamp for stamp in history if stamp > cutoff]
+                    for client, history in self._history.items() if history and history[-1] > cutoff
+                })
+                self._next_cleanup = now + self.window_seconds
+            if key not in self._history and len(self._history) >= self.max_keys:
+                raise HTTPException(status_code=429, detail='Rate limiter is busy. Please retry shortly.',
+                                    headers={'Retry-After': str(self.window_seconds)})
             timestamps = self._history[key]
             # Prune expired entries
             valid_timestamps = [ts for ts in timestamps if ts > cutoff]
@@ -65,7 +79,7 @@ class SlidingWindowRateLimiter:
 
             if len(valid_timestamps) >= self.max_requests:
                 oldest = valid_timestamps[0]
-                retry_after = max(1, int(self.window_seconds - (now - oldest)))
+                retry_after = max(1, math.ceil(self.window_seconds - (now - oldest)))
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                     detail=f"Rate limit exceeded for {self.name}. Maximum {self.max_requests} requests per {self.window_seconds}s. Please wait {retry_after} seconds.",

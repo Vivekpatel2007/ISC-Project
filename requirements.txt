@@ -17,9 +17,9 @@ cryptography==50.0.2
 python-dotenv==1.2.4
 
 # API, validation, authentication, and upload handling
-fastapi==0.115.12
+fastapi==0.162.6
 pydantic==2.10.6
-starlette==0.46.2
+starlette==1.10.0
 uvicorn==0.54.0
 python-multipart==0.0.33
 pyjwt==2.15.1

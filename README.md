@@ -6,6 +6,8 @@ An educational healthcare software engineering project implementing end-to-end s
 
 **Current scope (13 November 2026):** finish the existing screening prototype with image-linked Grad-CAM explanations. No new dataset, training run, or external language model is required. Finding detection and medical report generation are **deferred**. See the [project handoff and final review](docs/PROJECT_HANDOFF.md); the [future finding-model plan](docs/FINDING_MODEL_NEXT_STEPS.md) is retained only if the team revisits it.
 
+**Final application checks:** [13 November fixes and verification](docs/FINAL_REVIEW_2026-11-13.md) cover session expiry, private responses, bounded uploads, dependency updates and CPU/CUDA regression checks. The maintained profiles use PyTorch 2.14.1 / torchvision 0.29.1; the application weights and threshold are unchanged.
+
 **Patient workflow and current models:** see [patient management, file storage, and model inventory](docs/PATIENT_WORKFLOW_AND_STORAGE.md). The UI supports readable laptop text, expandable X-rays, patient follow-up/history, patient ID edits/deletion, and editable practitioner accounts. The repeated 93.75% entries were identical synthetic test uploads; those 10 scans and encrypted files have been cleared. Both latest Kaggle v2 model checkpoints are preserved locally; the original model remains the configured app default.
 
 ---
@@ -32,17 +34,17 @@ CUDA is NVIDIA technology. This setup accelerates compatible NVIDIA GPUs; AMD/In
 
 | Detected GPU family | Dependency profile | Conservative driver baseline: Windows / Linux |
 |---|---|---|
-| Turing, Ampere, Ada, Hopper: GTX 16, RTX 20/30/40 and matching workstation/datacenter GPUs; compute capability 7.5, 8.0, 8.6, 8.9, 9.0 | PyTorch `2.5.1+cu124`, torchvision `0.20.1+cu124` | `551.61+` / `550.54.14+` |
-| Blackwell: RTX 50 and matching GPUs; compute capability 10.0 or 12.0 | PyTorch `2.7.1+cu128`, torchvision `0.22.1+cu128` | `570.65+` / `570.26+` |
-| No NVIDIA GPU, older/unknown architecture, less than 4 GB VRAM, or insufficient driver | PyTorch `2.5.1+cpu`, torchvision `0.20.1+cpu` | No NVIDIA driver needed |
+| Turing, Ampere, Ada, Hopper: GTX 16, RTX 20/30/40 and matching workstation/datacenter GPUs; compute capability 7.5, 8.0, 8.6, 8.9, 9.0 | PyTorch `2.14.1+cu126`, torchvision `0.29.1+cu126` | `560.76+` / `560.28.03+` |
+| Blackwell: RTX 50 and matching GPUs; compute capability 10.0 or 12.0 | PyTorch `2.14.1+cu130`, torchvision `0.29.1+cu130` | `580.88+` / `580.65.06+` |
+| No NVIDIA GPU, older/unknown architecture, less than 4 GB VRAM, or insufficient driver | PyTorch `2.14.1+cpu`, torchvision `0.29.1+cpu` | No NVIDIA driver needed |
 
-The setup helper checks actual GPU capability, VRAM, and driver rather than assuming any installed graphics card can run CUDA. These versioned profiles follow the [official PyTorch build matrix](https://pytorch.org/get-started/previous-versions/) and conservative toolkit-driver pairings from [NVIDIA CUDA 12.4](https://docs.nvidia.com/cuda/archive/12.4.0/cuda-toolkit-release-notes/index.html) and [CUDA 12.8](https://docs.nvidia.com/cuda/archive/12.8.0/cuda-toolkit-release-notes/index.html). Other GPU models in the same supported capability groups can qualify; successful execution is verified after installation. The Blackwell profile is provided for compatibility but has not been physically tested on this GTX 1650 laptop.
+The setup helper checks actual GPU capability, VRAM, and driver rather than assuming any installed graphics card can run CUDA. These versioned profiles follow the [official PyTorch build matrix](https://pytorch.org/get-started/previous-versions/) and conservative toolkit-driver pairings from [NVIDIA CUDA 12.6](https://docs.nvidia.com/cuda/archive/12.6.0/cuda-toolkit-release-notes/index.html) and [the R580 driver notes for CUDA 13.0](https://docs.nvidia.com/datacenter/tesla/tesla-release-notes-580-65-06/index.html). Other GPU models in the same supported capability groups can qualify; successful execution is verified after installation. The Blackwell profile is provided for compatibility but has not been physically tested on this GTX 1650 laptop.
 
 **Default behavior:** setup selects a matching CUDA build when a GPU qualifies; otherwise it selects CPU. If CUDA installation or its execution check fails, automatic setup attempts to restore CPU dependencies and reports the failure. At application startup, `PULMOSCAN_DEVICE=auto` tries a real GPU kernel and warms up the actual model; unavailable or unusable CUDA falls back to CPU with a warning. No packages or drivers are installed when starting the app. A runtime out-of-memory error during a later request is not silently retried on another device.
 
 Leave `PULMOSCAN_DEVICE=auto` in `.env` for GPU preference with CPU fallback. Set it to `cpu` to force CPU, or `cuda` to require a GPU and fail clearly instead of falling back. Installing the standalone CUDA Toolkit is unnecessary for these prebuilt PyTorch wheels; a compatible NVIDIA driver is required. A CPU-only PyTorch installation cannot use a GPU until dependencies are changed.
 
-On the GTX 1650 laptop, the CUDA 12.4 profile has been installed and the real checkpoint has completed offline predictions on both `cuda:0` and forced CPU. Other GPU profiles are covered by simulated selection tests; they have not all been physically tested. In containers or virtual machines, the GPU must also be exposed to that environment.
+On the GTX 1650 laptop, the CUDA 12.6 profile is installed. The configured original checkpoint and downloaded Kaggle v2 DenseNet candidate completed eight fixed-image prediction/Grad-CAM checks across `cuda:0` and forced CPU, without changing model state. This is an execution/regression check, not an accuracy benchmark. Other GPU profiles are covered by simulated selection tests; they have not all been physically tested. In containers or virtual machines, the GPU must also be exposed to that environment.
 
 **Training is separate:** 16 GB system RAM is a starting point, with 32 GB more comfortable. The local profile uses batch 2 with accumulation 8 for a 4 GB GPU; larger physical batches are not guaranteed to fit. Around 8–12 GB VRAM gives more room. CPU training is supported but slower. Add dataset and checkpoint storage beyond the allowances above. Starting the web app never trains or modifies model weights.
 
@@ -153,8 +155,8 @@ For later runs, dependency installation is unnecessary unless rebuilding or chan
 |---|---|
 | `requirements.txt` | Pinned shared dependencies used by the API, model preprocessing/training/evaluation, plots, and backend tests |
 | `requirements/compute-cpu.txt` | Exact CPU-only torch/torchvision pair |
-| `requirements/compute-cu124.txt` | Exact CUDA 12.4 pair, including the GTX 1650 profile |
-| `requirements/compute-cu128.txt` | Exact CUDA 12.8 pair for the documented Blackwell profile |
+| `requirements/compute-cu126.txt` | Exact CUDA 12.6 pair, including the GTX 1650 profile |
+| `requirements/compute-cu130.txt` | Exact CUDA 13.0 pair for the documented Blackwell profile |
 | `constraints-local.txt` | Additional compatibility constraints for the shared backend stack |
 
 Hardware-dependent torch packages are kept out of the shared file so reinstalling shared dependencies cannot replace a CUDA installation with a CPU build or select an unrelated torch version. Versions come from the working Python 3.11 setup; this is a direct-dependency pin set, not a complete transitive lockfile. No Kaggle SDK, OpenCV, TensorFlow, or other unused frameworks are required.
@@ -169,7 +171,7 @@ To reinstall **only shared dependencies** after selecting the compute profile:
 For a fresh environment, use `setup_compute.py --install` first; the shared file alone intentionally does not install torch. Equivalent manual GPU installation for your GTX 1650 is:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements/compute-cu124.txt --index-url https://download.pytorch.org/whl/cu124
+.\.venv\Scripts\python.exe -m pip install -r requirements/compute-cu126.txt --index-url https://download.pytorch.org/whl/cu126
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt -c constraints-local.txt
 .\.venv\Scripts\python.exe scripts/check_compute.py --model
 ```

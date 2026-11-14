@@ -1,5 +1,7 @@
 # Backend and model review — 9 November 2026
 
+**Final hardening follow-up (13 November 2026):** [current fixes and verification](FINAL_REVIEW_2026-11-13.md). The older runtime pins and advisories described below are historical findings; use the follow-up and current requirements for the maintained install profiles. Clinical/data limitations remain separate from runtime fixes.
+
 Current operational follow-up: [BACKEND_OPERATIONS.md](BACKEND_OPERATIONS.md) documents thread-safe service initialization, non-initializing readiness probes, loaded-model fingerprints, provisional-checkpoint rejection, and isolated test storage. The historical findings below remain a record of the earlier review, not a statement that every listed issue is unresolved or that the new model is validated.
 
 Follow-up: [the manual training workflow](TRAINING.md) now fixes the preparation/parser issues described below and uses source-backed audited manifests with separate experiment outputs. This document preserves the earlier 624-image baseline and findings; no new model has been trained or promoted by the assistant.
