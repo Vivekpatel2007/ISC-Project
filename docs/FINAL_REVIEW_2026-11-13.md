@@ -45,7 +45,7 @@ The remaining test warnings are Starlette's supported-but-deprecated `httpx` tes
 
 Review evidence is kept under ignored `data/review/final_20261113/`, including the pre-update protected-file hashes and two fixed-image CPU inference references. These are runtime regression checks, not a new accuracy benchmark or independent validation. Tests use temporary storage and synthetic records; application scans must remain untouched.
 
-The optional legacy `src/evaluate_test.py` script has a separate Windows Application Control block on a scikit-learn native DLL. Its installed native files match the official PyPI wheel, so reinstalling identical bytes is not an established fix. No Windows security policy was disabled or bypassed. Current inference, Grad-CAM and the maintained manifest-based evaluation path do not import that legacy evaluator.
+At the 13 November review, the legacy `src/evaluate_test.py` import encountered a Windows Application Control block on a scikit-learn native DLL. Installed native files matched the official PyPI wheel. **Follow-up, 14 November:** fresh-process `sklearn.metrics` import, a two-example synthetic `src.scoring.metrics` call (with Torch imported first) and `python -m src.evaluate_test --help` all completed successfully in the updated environment. The earlier import block is no longer reproduced by those checks. Its precise cause was not isolated; no Windows security policy was disabled or bypassed. No dataset benchmark, threshold selection or model training was rerun. This does not establish every legacy evaluation workflow or old data/configuration is valid.
 
 ## Manual review before committing
 

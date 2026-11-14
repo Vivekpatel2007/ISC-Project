@@ -1,5 +1,16 @@
 # Train on Kaggle, run the app locally
 
+Updated 14 November 2026. **No Kaggle run is needed for normal application use or the completed explanation feature.** This folder preserves completed experiments and provides manual workflows for deliberate future training. The original DenseNet121 remains the configured app model; importing candidates does not activate them.
+
+| Artifact | Role |
+| --- | --- |
+| `PulmoScan_Training.ipynb` | v1 classifier workflow; retained for reproducibility |
+| `PulmoScan_Training_v2.ipynb` | Separate threshold-holdout/JPEG experiment workflow |
+| `PulmoScan_Logit_Diagnostics.ipynb` | Inference-only diagnostics; returned results already reviewed |
+| `PulmoScan_Finding_Data_Check.ipynb` | Deferred annotation intake only; does not train a detector |
+
+The completed v2 DenseNet candidate reported 86.57% accuracy on a **previously reviewed** 618-image benchmark (81 false positives, 2 false negatives). This is not the default app model's accuracy or a fresh external result. See [saved diagnostics/calibration](../docs/CALIBRATION_AND_EXTERNAL_VALIDATION.md) and [the model inventory](../docs/PATIENT_WORKFLOW_AND_STORAGE.md).
+
 **Scope update (13 November 2026):** finding detection is **deferred**. You do not need another dataset or Kaggle run for the current explanation feature. The [finding-model plan](../docs/FINDING_MODEL_NEXT_STEPS.md) and [PulmoScan_Finding_Data_Check.ipynb](PulmoScan_Finding_Data_Check.ipynb) are retained for possible future work; that notebook checks annotations only and is not a required setup step. The existing classifier notebooks below are reproduction references.
 
 **Current status:** the v2 diagnostic results have been verified. The next scoring/calibration work can use the downloaded CSVs locally, without another Kaggle training run. See [calibration and external validation](../docs/CALIBRATION_AND_EXTERNAL_VALIDATION.md). Only the original dataset is available so far; independent validation remains pending.
@@ -12,10 +23,10 @@
 
 Upload **[PulmoScan_Training.ipynb](PulmoScan_Training.ipynb)** to Kaggle. It is self-contained: it embeds the current shared training sources and needs no project ZIP, private GitHub access, local images, `.env`, or API credentials. The other files in this folder maintain the notebook; you do not need to upload them separately.
 
-## Start a training run
+## Deliberately start a v1 reference training run
 
 1. Sign in to Kaggle and create a Python notebook. Use **File → Import Notebook** to select `kaggle/PulmoScan_Training.ipynb` from this project.
-2. Use **Add Input** to attach [Paul Mooney's Chest X-Ray Images (Pneumonia)](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia), the dataset shown in your screenshot.
+2. Use **Add Input** to attach [Paul Mooney's Chest X-Ray Images (Pneumonia)](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia).
 3. Under session settings, select an available **GPU** and enable **Internet**. Internet is needed for the official Torchvision ImageNet weights and any missing training extras. GPU availability and verification/quota requirements are controlled by Kaggle; the notebook does not assume a specific accelerator is available. See [Kaggle's notebook documentation](https://www.kaggle.com/docs/notebooks).
 4. Leave `DATA_ROOT=None` for automatic detection. If more than one unrelated matching dataset is attached, set it to the directory directly containing `train/`, `val/`, and `test/`. Nested copies are never merged.
 5. Keep `RUN_FINAL_TEST=False` initially. Run the cells in order, or use **Run All**. The default training cell trains **DenseNet121, then EfficientNet-B0** with live logs.
@@ -24,6 +35,8 @@ Upload **[PulmoScan_Training.ipynb](PulmoScan_Training.ipynb)** to Kaggle. It is
 8. Save a notebook version **including output files** before ending the session, and confirm the model files appear in that version's outputs. Draft code autosave alone is insufficient. When offered, use Quick Save with output saving enabled for an already completed interactive run. **Save & Run All executes a fresh run**; choose it deliberately rather than expecting it merely to preserve the current session. Kaggle's controls may change; check the save dialog's output options.
 
 The notebook keeps Kaggle's installed, matching `torch`/`torchvision` GPU pair. It checks torch >= 2.5, the CUDA runtime, a real GPU kernel, pretrained-weight hashes, and finite forward outputs. It installs only missing training extras listed in [requirements.txt](requirements.txt). **Do not install the project's Windows CUDA profiles or full API requirements in Kaggle.** Runtime versions and the exact training-source fingerprint are recorded in every candidate's metadata.
+
+That compatibility floor is not a security endorsement of every accepted version. The local app uses the reviewed PyTorch 2.14.1 / torchvision 0.29.1 pair; Kaggle's managed runtime can differ. Review the actual runtime before a new run, use trusted weights, and preserve the original notebook/environment for old resume states. Changing runtime, source or configuration prevents claims of exact experiment continuation.
 
 ## Settings and protocol
 

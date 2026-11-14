@@ -32,6 +32,9 @@ secure_data/
 # Downloaded datasets, archives, and prepared image copies
 /data/
 
+# Private presentation/viva preparation; intentionally excluded from commits
+/learning/
+
 # Legacy generated results; active experiments live under data/experiments/
 /results/*
 !/results/README.md

@@ -90,7 +90,7 @@ Authentication, role/ownership checks, and the existing inference rate limiter a
 
 ## Verification and limits
 
-Final verification on 13 November 2026 passed **232 backend tests** and **106 frontend tests**, plus frontend lint, the Next.js production build and eight CPU/CUDA inference/explanation checks on the updated runtime. See [the final review](FINAL_REVIEW_2026-11-13.md) for exact scope, dependency checks and numerical comparisons. Default pytest discovery targets `tests/`; a separate legacy evaluator has a Windows DLL limitation documented in the [handoff](PROJECT_HANDOFF.md). Verification includes:
+Final verification on 13 November 2026 passed **232 backend tests** and **106 frontend tests**, plus frontend lint, the Next.js production build and eight CPU/CUDA inference/explanation checks on the updated runtime. See [the final review](FINAL_REVIEW_2026-11-13.md) for exact scope, dependency checks and numerical comparisons, including the 14 November follow-up where the old metrics import block was not reproduced. Default pytest discovery targets `tests/`. Verification includes:
 
 - Analytically known feature locations and target-class specificity.
 - A synthetic occlusion test that lowers the known target logit.

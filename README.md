@@ -1,6 +1,6 @@
-# AI-Based Pneumonia Detection with Secure Storage & Transmission of Medical Data
+# PulmoScan: AI-Based Pneumonia Detection with Secure Storage & Transmission of Medical Data
 
-An educational healthcare software engineering project implementing end-to-end secure medical radiograph storage, deep learning diagnostic screening, and practitioner workflows.
+PulmoScan is an academic prototype combining **pneumonia image classification, encrypted radiograph storage, and role-based practitioner access**. Staff upload a chest X-ray, request screening from a saved DenseNet121, and optionally inspect a Grad-CAM heatmap with linked image-region notes. Uploading never trains the model.
 
 **Optional visual explanations:** after fresh screening, **Explain prediction** generates a Grad-CAM overlay with numbered image sections, linked plain-language notes, Original/Heatmap toggles, opacity, and enlarged viewing. See [explainability and verification](docs/EXPLAINABILITY.md). The notes describe relative score contributions in displayed-image coordinates; they do not identify medical findings, confirmed pneumonia locations, or improve model accuracy.
 
@@ -8,7 +8,23 @@ An educational healthcare software engineering project implementing end-to-end s
 
 **Final application checks:** [13 November fixes and verification](docs/FINAL_REVIEW_2026-11-13.md) cover session expiry, private responses, bounded uploads, dependency updates and CPU/CUDA regression checks. The maintained profiles use PyTorch 2.14.1 / torchvision 0.29.1; the application weights and threshold are unchanged.
 
-**Patient workflow and current models:** see [patient management, file storage, and model inventory](docs/PATIENT_WORKFLOW_AND_STORAGE.md). The UI supports readable laptop text, expandable X-rays, patient follow-up/history, patient ID edits/deletion, and editable practitioner accounts. The repeated 93.75% entries were identical synthetic test uploads; those 10 scans and encrypted files have been cleared. Both latest Kaggle v2 model checkpoints are preserved locally; the original model remains the configured app default.
+**Patient workflow:** accessible scans are grouped by pseudonymous patient ID, with follow-up history, ID correction/deletion, and editable practitioner accounts. Patients have no logins. See [storage and model inventory](docs/PATIENT_WORKFLOW_AND_STORAGE.md).
+
+**Scope:** this is educational screening software, not a clinically validated diagnostic device. Image scores are uncalibrated, and explanation text describes model contributions rather than medical findings. Kafka, Redis, Prometheus, Grafana, finding detectors and generated medical reports are not implemented.
+
+## Current model and measured results
+
+| Artifact | Role |
+| --- | --- |
+| `models/densenet121_pneumonia_best.pth` | Checked-in default DenseNet121; epoch 5, 224px stretch preprocessing, NORMAL=0 / PNEUMONIA=1, cutoff **0.40** |
+| Kaggle v2 DenseNet121 under `data/experiments/` | Imported candidate; epoch 20, letterbox preprocessing, saved cutoff approximately **0.9999873**; not automatically activated |
+| Kaggle v2 EfficientNet-B0 under `data/experiments/` | Imported candidate; epoch 16; requires serving support before use by the DenseNet-specific API |
+
+The original default checkpoint SHA-256 is `5419fadee007300222c7f85e03bd2cb940fb2742864de5fe0b2be83c80bacd1f`. Check **Profile → Active model**, a fresh prediction's fingerprint or `/health/ready` for the bytes actually loaded. Configuration/file changes require a backend restart. Do not reuse one model's cutoff or preprocessing for another checkpoint.
+
+The **Kaggle v2 DenseNet candidate**, not the default app model, reported **86.57% accuracy** on a previously reviewed 618-image benchmark: TN=150, FP=81, FN=2, TP=385. Raw-margin ROC-AUC was **0.97321**; probability ROC-AUC was **0.83648** under score saturation. These are dataset-specific historical results, not fresh external validation or guaranteed future accuracy. The experimental temperature profile is not loaded by the API. See [scoring and calibration](docs/CALIBRATION_AND_EXTERNAL_VALIDATION.md).
+
+The teammate's exact original training GPU is not established. A `cuda:0` tensor tag does not prove RTX 3050 training. New predictions are forward passes using saved weights, not searches for a matching training image.
 
 ---
 
@@ -54,56 +70,48 @@ On the GTX 1650 laptop, the CUDA 12.6 profile is installed. The configured origi
 
 ```mermaid
 graph TD
-    A[Next.js 16 Healthcare Frontend\nPulmoScan] -->|HTTPS + In-Memory JWT| B[FastAPI Backend\nREST API]
+    A[Next.js 16 Healthcare Frontend\nPulmoScan] -->|REST + in-memory bearer token| B[FastAPI Backend\nREST API]
     B -->|RBAC Policy Check| C{Authorization}
     C -->|Doctor / Radiologist| D[AES-256-GCM Storage Engine\nPX01 Format]
     D -->|Encrypted Ciphertext| E[Encrypted Images Directory\nsecure_data/encrypted_images]
     D -->|Metadata Transaction| F[SQLite Database\nsecure_data/metadata.db]
     B -->|In-Memory Decryption & AEAD Tag Verification| G[DenseNet121 Inference Engine\nCPU or compatible CUDA runtime]
-    G -->|Tuned Threshold 0.40| H[Class Scores & Screening Output]
+    G -->|Checkpoint-specific cutoff| H[Class Scores & Screening Output]
+    G --> I[Optional Grad-CAM and spatial notes]
 ```
 
 ---
 
-## Core Capabilities by Phase
+## Implementation and security boundaries
 
-1. **Phase 1: Cryptography & Secure Storage**
-   - **AES-256-GCM authenticated encryption** with NIST SP 800-38D recommended 96-bit nonces.
-   - SHA-256 integrity digest verification and HMAC-SHA256 transmission utilities.
-   - Atomic disk writes (`.tmp` to `.enc` replace) preventing partial/truncated files.
-   - SQLite metadata tracking with pseudonymous identifiers (`ANON-XXXXX`).
+| Component | Current implementation |
+| --- | --- |
+| Backend | Python 3.11, FastAPI, Starlette, Pydantic, Uvicorn |
+| Classification | PyTorch/torchvision DenseNet121; Pillow and NumPy preprocessing |
+| Images | AES-256-GCM encrypted `.enc` copies under `secure_data/encrypted_images/` |
+| Metadata | SQLite `secure_data/metadata.db`: scans, ownership, scores and practitioner accounts; the database file itself is **not encrypted** |
+| Authentication | bcrypt hashes, HS256 JWTs, account-version revocation and database-backed role checks |
+| Interface | Next.js 16.4.3, React 19.3.0, TypeScript, Tailwind CSS; light/dark appearance |
+| Development/testing | Turborepo, Pytest, Vitest, React Testing Library |
 
-2. **Phase 2: FastAPI Backend & RBAC**
-   - Signed JWT authentication (HMAC-SHA256, 30-minute expiration).
-   - Salted Bcrypt password hashing (cost factor 12) with constant-time verification.
-   - Strict role-based access control (Doctor ownership vs Radiologist institutional review).
-   - In-memory DenseNet121 inference using CPU, or CUDA when a compatible GPU-enabled PyTorch installation is available.
-   - Liveness (`/health`) and readiness (`/health/ready`) probes.
+Selecting a file initially creates a preview. Uploading sends its bytes and stores an encrypted copy; the source file is not moved, edited or monitored. Application uploads are separate from training data.
 
-3. **Phase 3: Next.js Frontend ("PulmoScan")**
-   - Modern App Router, React 19, TypeScript, and Tailwind CSS.
-   - In-memory token management in React state (zero storage in `localStorage` or cookies).
-   - Practitioner dashboard, drag-and-drop X-ray upload, real-time preview cleanup.
-   - Repository browsing with search and status filtering.
-   - Probability visualization and clinical decision support disclaimers.
+The default local connection is **HTTP on loopback**. Remote deployment needs configured and verified HTTPS/TLS; signed JWTs, AES storage, HMAC helper functions and an HSTS header do not themselves encrypt network traffic. HMAC utilities exist in the security module but are not a separate authenticated API transport protocol.
 
-4. **Phase 4: Security Hardening & End-to-End Validation**
-   - Production configuration validation preventing insecure default keys.
-   - Thread-safe sliding-window rate limiting on login (10 req/min) and inference (30 req/min).
-   - Pillow decompression bomb safeguards (`MAX_IMAGE_PIXELS = 16.7M`).
-   - OWASP security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options).
-   - Live end-to-end integration test suite and key recovery verification.
+Uploads have an early body-size limit and an exact image-byte limit; decoding/encryption/storage use the worker pool. Multipart ingestion can still spool temporarily before encryption, so do not claim zero plaintext disk use. The model checks image format/dimensions, not whether an upload is truly a chest X-ray.
 
-5. **Phase 5: Deployment, Release Preparation & Benchmarking**
-   - Earlier project benchmark reports include CPU and CUDA inference measurements; these are not timing guarantees for other machines. See the [model and hardware guide](docs/MODEL_AND_HARDWARE.md) for the verified local setup and measurement scope.
-   - Multi-stage Docker containerization and Docker Compose orchestration with persistent storage.
-   - Graceful hardware fallback from CUDA to CPU.
-   - Operational staging deployment guide, disaster recovery runbook, and release checklist.
+Sessions expire in memory and clear on matching protected-request 401 responses. API responses request no caching, limits bound authentication/inference traffic per process, and database/file identifiers are validated. These controls are not regulatory compliance or a production security certification. Docker deployment is not demonstrated by this checkout.
 
 ---
 
 ## Project Documentation Index
 
+Use the current inventory, explanation, handoff and final-review guides first. Older audit, deployment and user-guide sections preserve earlier proposals/measurements; their presence does not establish completed Docker deployment, HTTPS configuration or clinical validation.
+
+- [Current Storage, Patient Workflow and Model Inventory](docs/PATIENT_WORKFLOW_AND_STORAGE.md)
+- [Grad-CAM Explanations and Their Limits](docs/EXPLAINABILITY.md)
+- [Final Application Review and Verification](docs/FINAL_REVIEW_2026-11-13.md)
+- [Handoff and Manual Review](docs/PROJECT_HANDOFF.md)
 - [Local Setup and Turborepo Commands](docs/LOCAL_SETUP.md)
 - [How the Model Works, CPU/GPU Selection & Hardware Requirements](docs/MODEL_AND_HARDWARE.md)
 - [Dataset Download, Folder Layout & Training Preparation](docs/DATASET_SETUP.md)
@@ -195,17 +203,30 @@ Turborepo checks setup once, then starts FastAPI and Next.js concurrently with l
 
 Use `npm.cmd run dev:frontend` or `npm.cmd run dev:backend` to launch one service. `npm.cmd run dev:plan` shows Turbo's task plan without executing it.
 
+For API docs, call JSON `POST /auth/login` and paste its access token into **Authorize** (BearerAuth). Demonstration accounts are created only when the users table is empty and `SEED_DEMO_USERS` is enabled:
+
+| Portal | Initial username | Public demonstration password |
+| --- | --- | --- |
+| Staff | `doctor1` | `DoctorPassword123!` |
+| Radiologist | `radiologist1` | `RadioPassword123!` |
+
+These are local demo credentials, not production secrets. Renamed accounts are not recreated on restart. The app keeps tokens/passwords in memory; refreshing/closing the tab ends the session. Portal and appearance preferences may persist.
+
 ### Automated Checks
 
 Backend initialization, readiness, and test storage isolation are described in [backend operations](docs/BACKEND_OPERATIONS.md). Readiness reports the loaded checkpoint fingerprint and operational component status; it does not certify model quality. The default pytest suite uses private temporary storage and test-only keys rather than application storage.
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest tests/test_dev_setup.py -v
+.\.venv\Scripts\python.exe -m pytest -q
 npm.cmd --prefix frontend test
 npm.cmd --prefix frontend run lint
+npm.cmd --prefix frontend run build
+npm.cmd run dev:check
 ```
 
 The full backend suite remains available via `.\.venv\Scripts\python.exe -m pytest tests/ -v`. The live workflow check requires an already running backend: `.\.venv\Scripts\python.exe tests/e2e_live_verification.py`.
+
+Last full application check, **13 November 2026**: **232 backend tests and 106 frontend tests** passed, along with lint, production build and preflight. Eight fixed-image CPU/CUDA prediction/explanation checks passed on the GTX 1650. These are functional/runtime checks, not a clinical accuracy estimate. On **14 November**, fresh-process scikit-learn imports, a synthetic metric check and the legacy evaluator's `--help` also passed in the updated environment; the previous native-DLL block was not reproduced. No dataset benchmark was rerun. See [the exact review scope](docs/FINAL_REVIEW_2026-11-13.md).
 
 ---
 
@@ -213,7 +234,7 @@ The full backend suite remains available via `.\.venv\Scripts\python.exe -m pyte
 
 This project uses **Kermany et al., Chest X-Ray Images (Pneumonia), from Kaggle**. Download the [Chest X-Ray Images (Pneumonia) dataset by Paul Mooney](https://www.kaggle.com/datasets/paultimothymooney/chest-xray-pneumonia), then extract the folder containing `train`, `val`, and `test` to `data/chest_xray/`. Each split should contain `NORMAL/` and `PNEUMONIA/`. The related [original Kermany dataset record](https://data.mendeley.com/datasets/rscbjbr9sj/2) includes both OCT and chest X-ray data; this project needs the chest X-rays.
 
-The images are not included in this repository. Downloading them does not retrain the model. The app and automated backend tests can use the saved checkpoint without the training dataset. Check the [dataset setup guide](docs/DATASET_SETUP.md) for the exact folder tree, a read-only image check, split limitations, and what to obtain from your teammate to reproduce the previous experiment. The entire `data/` directory is ignored by Git.
+The dataset is optional for running the saved-model app and its automated tests. Images are not included in the repository, and downloading them does not retrain the model. Check the [dataset setup guide](docs/DATASET_SETUP.md) for folder layouts, source checks and split limitations. The entire `data/` directory is ignored by Git; imported models/experiment reports need a separate backup.
 
 The current local download is directly under `data/train`, `data/val`, and `data/test`; the audit tools accept it without moving images:
 
@@ -222,15 +243,15 @@ The current local download is directly under `data/train`, `data/val`, and `data
 .\.venv\Scripts\python.exe scripts/evaluate_backend.py --data-dir data
 ```
 
-These commands do not start servers or train. They write ignored reports under `data/review/`. The [backend review](docs/BACKEND_REVIEW.md) records the historical findings and outstanding input-suitability, multipart-spooling, and dependency-security limitations. Old generated results and the local baseline prediction JSON have been removed. Dataset integrity audits and prepared manifests remain; new model training results are written only under `data/experiments/<timestamp>/`.
+These optional commands do not start servers or train; they write ignored reports under `data/review/`. A successful import/help check does not establish a successful full dataset evaluation. The [backend review](docs/BACKEND_REVIEW.md) is historical; [the final review](docs/FINAL_REVIEW_2026-11-13.md) records runtime fixes and follow-ups. New training outputs use separate `data/experiments/<run>/` directories.
 
 The historical review documents patient overlap and duplicate leakage concerns. Before new training, audit the splits rather than treating previous metrics or a random split as independently validated accuracy.
 
 ---
 
-## Train Manually in Your Terminal
+## Optional Local Training
 
-**Current laptop status:** another source-image checksum failure occurred during epoch 3. Its cause has not been diagnosed. Local training correctly stops on this failure; do not change hashes or silently skip images. The local runner remains available for a verified dataset on a reliable machine. To move this training to Kaggle, use the standalone notebook below.
+**Historical local training limitation:** a source-image checksum failure stopped an earlier run during epoch 3. Its cause has not been diagnosed. Do not bypass hashes or silently skip changed images. The local runner remains available for a verified dataset; normal app use needs no training. For deliberate future Kaggle work, use the standalone notebooks below.
 
 The current prepared manifest contains **4,035 training / 712 validation / 618 test images**. It uses the existing source images without creating another dataset copy, excludes suspect and test-connected candidate groups, and deduplicates decoded pixels. Four unexpectedly changed source files and their connected groups were excluded; image hashes are checked during training. See the [training guide](docs/TRAINING.md) for the integrity findings and exact split policy.
 
