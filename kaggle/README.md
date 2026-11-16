@@ -1,6 +1,6 @@
 # Train on Kaggle, run the app locally
 
-Updated 14 November 2026. **No Kaggle run is needed for normal application use or the completed explanation feature.** This folder preserves completed experiments and provides manual workflows for deliberate future training. The original DenseNet121 remains the configured app model; importing candidates does not activate them.
+Updated 16 November 2026. **No Kaggle run is needed for normal application use or the completed explanation feature.** This folder preserves completed experiments and provides manual workflows for deliberate future training. The original DenseNet121 remains the configured app model; importing candidates does not activate them.
 
 | Artifact | Role |
 | --- | --- |
@@ -46,7 +46,7 @@ The local default remains physical batch 2 / accumulation 8, with automatic GPU 
 
 Kaggle inputs remain read-only. The notebook fully decodes/audits the attached dataset, records hashes, reserves test-connected candidate-subject/duplicate components, deduplicates exact pixels, and produces a fresh manifest. It never copies the raw dataset into its output directory or silently skips an integrity failure. Every training read verifies the original saved hash.
 
-The laptop's earlier suspect-file exclusions are specific to that source tree and are **not** applied to Kaggle's independently audited inputs. As a result, Kaggle split counts and manifest identity may differ from the laptop's 4,035 / 712 / 618. Use the counts and checksums printed by your actual run. Do not present metrics from different manifests as a direct same-cohort improvement. Filename-derived groups are heuristics, not verified patient identities; near-duplicate and external clinical validation remain unresolved. The reserved benchmark is not a new unseen external cohort.
+Source-specific exclusions are not transferred blindly between machines or dataset copies. Use the counts and checksums printed by your actual run; different manifests can have different cohort sizes. Do not present metrics from different manifests as a direct same-cohort improvement. Filename-derived groups are heuristics, not verified patient identities; near-duplicate and external clinical validation remain unresolved. The reserved benchmark is not a new unseen external cohort.
 
 ## What to download
 
@@ -68,16 +68,16 @@ The full workspace under `/kaggle/working/pulmoscan_training/` also contains the
 
 ## Bring the ZIP back to this project
 
-From the project root, replace the example path with your actual download:
+From the project root, activate its Python environment as described in [local setup](../docs/LOCAL_SETUP.md#2-create-the-project-environment), or use the explicit project interpreter for your OS. The following `python` examples assume that environment is active. Replace the example archive path with your actual download:
 
-```powershell
-.\.venv\Scripts\python.exe scripts/experiment_bundle.py verify --archive "C:\path\to\pulmoscan_models.zip"
-.\.venv\Scripts\python.exe scripts/experiment_bundle.py import --archive "C:\path\to\pulmoscan_models.zip"
+```bash
+python scripts/experiment_bundle.py verify --archive "path/to/pulmoscan_models.zip"
+python scripts/experiment_bundle.py import --archive "path/to/pulmoscan_models.zip"
 ```
 
 Import verifies all file checksums and stores the suite under `data/experiments/<original suite name>/`, with its training source under `training_source/`. It refuses to replace an existing suite, loads no checkpoint pickle, starts no server, and does not change the live model or `.env`. Use bundles produced by your own trusted notebook; checksums detect corruption, not the identity of an archive's creator.
 
-The downloaded manifest intentionally preserves the original Kaggle source paths. Do not rewrite it to point at the damaged laptop dataset. Do final test evaluation in the original Kaggle environment. After downloading, review `comparison.json` and any final test results before promotion. The current API accepts DenseNet121; if EfficientNet-B0 wins, serving compatibility and UI labeling must be implemented/reviewed before deployment. Renaming a file alone does not complete that integration.
+The downloaded manifest intentionally preserves the original Kaggle source paths. Do not rewrite it to point at a different local dataset copy. Perform any deliberately scheduled benchmark evaluation in the original compatible environment with the intended inputs. After downloading, review `comparison.json` and evaluation results before promotion. The current API accepts DenseNet121; if EfficientNet-B0 wins, serving compatibility and UI labeling must be implemented/reviewed before deployment. Renaming a file alone does not complete that integration.
 
 ## Resume on Kaggle
 
@@ -88,10 +88,12 @@ The downloaded manifest intentionally preserves the original Kaggle source paths
 
 ## Maintain or verify the notebook locally
 
-```powershell
-.\.venv\Scripts\python.exe kaggle/build_notebook.py
-.\.venv\Scripts\python.exe kaggle/build_notebook.py --check
-.\.venv\Scripts\python.exe -m pytest tests/test_kaggle_workflow.py tests/test_training_pipeline.py tests/test_training_integrity.py -q
+Use the same activated project environment for these commands; no real training run is performed by the builder checks.
+
+```bash
+python kaggle/build_notebook.py
+python kaggle/build_notebook.py --check
+python -m pytest tests/test_kaggle_workflow.py tests/test_training_pipeline.py tests/test_training_integrity.py -q
 ```
 
 The builder embeds only its explicit source allowlist, never datasets, trained weights, secrets, or patient storage. Rebuild the notebook after changing shared training code. Automated checks compile every notebook cell, execute the source bootstrap in temporary storage, exercise preparation on synthetic images, test resume routing and tiny-network resume, and verify export/import checksums and path containment. They do not run a real Kaggle session or train the production backbones. The actual Kaggle GPU training run is performed by you.

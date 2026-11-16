@@ -7,6 +7,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const python = path.join(root, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
 const next = path.join(root, 'frontend/node_modules/next/dist/bin/next');
 const action = process.argv[2];
+const setupCommand = `${process.platform === 'win32' ? '.\\.venv\\Scripts\\python.exe' : './.venv/bin/python'} scripts/setup_local_env.py`;
 
 function requireFile(filename, help) {
   if (!existsSync(filename)) {
@@ -17,8 +18,8 @@ function requireFile(filename, help) {
 function check() {
   requireFile(python, 'Create .venv first; see README.md.');
   requireFile(next, 'Run npm ci --prefix frontend from the project root.');
-  requireFile(path.join(root, '.env'), 'Run .venv\\Scripts\\python.exe scripts/setup_local_env.py.');
-  requireFile(path.join(root, 'frontend/.env.local'), 'Run .venv\\Scripts\\python.exe scripts/setup_local_env.py.');
+  requireFile(path.join(root, '.env'), `Run ${setupCommand}.`);
+  requireFile(path.join(root, 'frontend/.env.local'), `Run ${setupCommand}.`);
   const result = spawnSync(python, [path.join(root, 'scripts/check_backend.py')], {
     cwd: root,
     stdio: 'inherit',

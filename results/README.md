@@ -18,3 +18,5 @@ New training outputs are isolated under `data/experiments/<timestamp>/<model>/`,
 Preserve the relevant audits under `data/review/` and exact prepared manifests under `data/prepared/<protocol>/` when reproducing an experiment. These preparation records are not required for normal saved-model app startup. Checkpoints under `models/` are retained until a reviewed replacement is deliberately promoted.
 
 This directory is reserved for explicitly invoked legacy tools. Newly generated legacy outputs are ignored by Git; the active training runner does not read or write them.
+
+For the current general setup and verification entry points, use the [root README](../README.md) and [16 November finalization](../docs/FINALIZATION_2026-11-16.md). Historical experiment metrics remain attached to their original artifacts/cohorts.

@@ -32,19 +32,20 @@ Class scores are **uncalibrated**. The UI displays saturated/rounded scores as `
 
 ## Setup and manual startup
 
-Complete the [root setup](../README.md#local-setup-and-running-the-application) first: Python 3.11 environment, selected compute pair, shared Python requirements and local secrets. From the project root:
+Use Python **3.11**, Node.js **22.13+ within 22.x, 24.x, or 26+**, and npm **10+**. Complete the [Windows or Linux root setup](../README.md#local-setup-and-running-the-application) first, including the project environment, compute/shared Python dependencies, both npm lockfiles and local configuration.
 
-```powershell
-npm.cmd ci
-npm.cmd ci --prefix frontend
-.\.venv\Scripts\python.exe scripts/setup_local_env.py
-npm.cmd run dev:check
-npm.cmd run dev
+After that setup, from the project root:
+
+```bash
+npm run dev:check
+npm run dev
 ```
 
-The configuration helper preserves existing environment files. `frontend/.env.local` normally points `NEXT_PUBLIC_API_BASE_URL` to `http://127.0.0.1:8000`; this is public configuration, not a place for secrets. Ctrl+C stops both services. To start only the frontend, use `npm.cmd run dev:frontend` from the root with a separately started backend.
+Use `npm.cmd` instead of `npm` in Windows PowerShell if its script shim is blocked. Ctrl+C stops both services. For frontend only, run `npm run dev:frontend` after preflight, with a separately started backend. Dependencies are not reinstalled on each launch.
 
-Use the public demonstration credentials in the root README's linked user guide only for local demonstrations. They are seeded only when the users table is empty and demo seeding is enabled. The default connection is loopback HTTP; remote use requires configured HTTPS.
+`frontend/.env.local` normally points `NEXT_PUBLIC_API_BASE_URL` to `http://127.0.0.1:8000`; this is public configuration, not a place for secrets. The root environment helper creates missing configuration and preserves existing keys/files. The source and saved checkpoint are required, but a training dataset is not.
+
+Demo credentials in the root README are for local use only and are seeded only into an empty users table when enabled. Local HTTP is not a remote HTTPS deployment.
 
 ## Stack and verification
 
@@ -52,10 +53,14 @@ Next.js 16.4.3, React 19.3.0, TypeScript, Tailwind CSS, Lucide icons, Vitest and
 
 From the project root:
 
-```powershell
-npm.cmd --prefix frontend test
-npm.cmd --prefix frontend run lint
-npm.cmd --prefix frontend run build
+```bash
+npm --prefix frontend test
+npm --prefix frontend run lint
+npm --prefix frontend run build
 ```
 
-The last full check on **13 November 2026** passed **106 frontend tests**, lint and production build; the backend passed **232 tests**. These are functional checks, not medical validation. See [the final review](../docs/FINAL_REVIEW_2026-11-13.md) and [manual handoff](../docs/PROJECT_HANDOFF.md). Test/build commands do not start application servers.
+On Windows PowerShell, use `npm.cmd` for these commands.
+
+The baseline application review on **13 November 2026** passed **106 frontend tests**, lint and production build; the backend passed **232 tests**. These are functional checks, not medical validation. See [the final review](../docs/FINAL_REVIEW_2026-11-13.md) and [manual handoff](../docs/PROJECT_HANDOFF.md). Test/build commands do not start application servers.
+
+See [16 November finalization](../docs/FINALIZATION_2026-11-16.md) for the latest check and generalized setup requirements.
